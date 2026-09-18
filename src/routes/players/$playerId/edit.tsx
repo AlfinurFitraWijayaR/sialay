@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import {
   createFileRoute,
   Link,
@@ -12,8 +12,10 @@ import {
 } from '../../../lib/player-utils'
 import { getAuthSessionFn } from '../../../server/auth/actions'
 import {
+  deletePlayerPhotoFn,
   getPlayerDetailFn,
   updatePlayerFn,
+  uploadPlayerPhotoFn,
 } from '../../../server/players/actions'
 
 export const Route = createFileRoute('/players/$playerId/edit')({
@@ -36,6 +38,7 @@ export const Route = createFileRoute('/players/$playerId/edit')({
 function EditPlayerPage() {
   const { player } = Route.useLoaderData()
   const router = useRouter()
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   const [fullName, setFullName] = useState(player.fullName)
   const [placeOfBirth, setPlaceOfBirth] = useState(player.placeOfBirth)
@@ -44,8 +47,8 @@ function EditPlayerPage() {
   const [playingPosition, setPlayingPosition] = useState<string>(
     player.playingPosition,
   )
-  const [parentName, setParentName] = useState(player.parentName)
-  const [parentPhone, setParentPhone] = useState(player.parentPhone)
+  const [parentName, setParentName] = useState(player.parentName || '')
+  const [parentPhone, setParentPhone] = useState(player.parentPhone || '')
   const [joinDate, setJoinDate] = useState(player.joinDate || '')
   const [status, setStatus] = useState<'active' | 'inactive'>(
     player.status === 'inactive' ? 'inactive' : 'active',
@@ -54,8 +57,90 @@ function EditPlayerPage() {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Photo management state
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+  const [showDeletePhotoModal, setShowDeletePhotoModal] = useState(false)
+  const [isDeletingPhoto, setIsDeletingPhoto] = useState(false)
+
   const liveKU = calculateKU(dateOfBirth)
   const liveAge = calculateAge(dateOfBirth)
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setPhotoError(null)
+
+    if (file.size > 2 * 1024 * 1024) {
+      setPhotoError(
+        `Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(2)} MB) melebihi batas maksimum 2MB.`,
+      )
+      if (photoInputRef.current) photoInputRef.current.value = ''
+      return
+    }
+
+    const validMimes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!validMimes.includes(file.type)) {
+      setPhotoError(
+        'Format berkas tidak didukung. Harap pilih gambar JPEG, PNG, atau WebP.',
+      )
+      if (photoInputRef.current) photoInputRef.current.value = ''
+      return
+    }
+
+    setIsUploadingPhoto(true)
+    try {
+      const reader = new FileReader()
+      reader.onload = async () => {
+        try {
+          const base64String = reader.result as string
+          await uploadPlayerPhotoFn({
+            data: {
+              playerId: player.id,
+              fileBase64: base64String,
+              fileName: file.name,
+            },
+          })
+          await router.invalidate()
+        } catch (err) {
+          setPhotoError(
+            err instanceof Error ? err.message : 'Gagal memperbarui foto profil.',
+          )
+        } finally {
+          setIsUploadingPhoto(false)
+          if (photoInputRef.current) photoInputRef.current.value = ''
+        }
+      }
+      reader.onerror = () => {
+        setPhotoError('Gagal membaca berkas gambar.')
+        setIsUploadingPhoto(false)
+        if (photoInputRef.current) photoInputRef.current.value = ''
+      }
+      reader.readAsDataURL(file)
+    } catch (err) {
+      setPhotoError(
+        err instanceof Error ? err.message : 'Terjadi kesalahan saat unggah.',
+      )
+      setIsUploadingPhoto(false)
+      if (photoInputRef.current) photoInputRef.current.value = ''
+    }
+  }
+
+  const handleDeletePhoto = async () => {
+    setIsDeletingPhoto(true)
+    try {
+      await deletePlayerPhotoFn({
+        data: { playerId: player.id },
+      })
+      setShowDeletePhotoModal(false)
+      await router.invalidate()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menghapus foto.')
+    } finally {
+      setIsDeletingPhoto(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -77,14 +162,6 @@ function EditPlayerPage() {
       setError('Alamat lengkap wajib diisi.')
       return
     }
-    if (!parentName.trim()) {
-      setError('Nama orang tua / wali wajib diisi.')
-      return
-    }
-    if (!parentPhone.trim()) {
-      setError('Nomor telepon orang tua wajib diisi.')
-      return
-    }
 
     setIsSubmitting(true)
     try {
@@ -96,8 +173,8 @@ function EditPlayerPage() {
           dateOfBirth,
           address,
           playingPosition,
-          parentName,
-          parentPhone,
+          parentName: parentName.trim() || undefined,
+          parentPhone: parentPhone.trim() || undefined,
           joinDate: joinDate || undefined,
           status,
         },
@@ -160,11 +237,76 @@ function EditPlayerPage() {
 
       {/* Form Card */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Section 1: Identitas Pribadi */}
+        {/* Section 1: Identitas Pribadi & Foto */}
         <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm space-y-4">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F2C59] border-b border-[#e2e8f0] pb-2">
-            1. Biodata Pribadi Pemain
+            1. Biodata Pribadi Pemain & Foto Profil
           </h2>
+
+          {/* Profile Photo Card */}
+          <div className="p-4 rounded-lg bg-[#f8fafc] border border-[#e2e8f0]">
+            <div className="text-xs font-semibold text-[#334155] mb-2">
+              Foto Profil Pemain
+            </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="w-20 h-20 rounded-xl overflow-hidden border border-[#cbd5e1] bg-white flex items-center justify-center shrink-0 shadow-2xs">
+                {player.photoDataUrl ? (
+                  <img
+                    src={player.photoDataUrl}
+                    alt={player.fullName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[#1b4d3e] text-white flex items-center justify-center font-bold text-lg">
+                    {player.fullName.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5 flex-1">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={isUploadingPhoto}
+                    onClick={() => photoInputRef.current?.click()}
+                    className="px-3 py-1.5 text-xs font-medium text-[#0F2C59] bg-white hover:bg-gray-50 rounded-lg border border-[#cbd5e1] transition cursor-pointer disabled:opacity-50"
+                  >
+                    {isUploadingPhoto
+                      ? 'Mengunggah...'
+                      : player.photoDataUrl
+                        ? 'Ganti Foto'
+                        : 'Unggah Foto Profil'}
+                  </button>
+                  {player.photoDataUrl && (
+                    <button
+                      type="button"
+                      disabled={isUploadingPhoto}
+                      onClick={() => setShowDeletePhotoModal(true)}
+                      className="px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition cursor-pointer disabled:opacity-50"
+                    >
+                      Hapus Foto
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
+                <p className="text-[11px] text-[#64748b]">
+                  Format: JPG, PNG, atau WebP. Maks 2MB. Foto disimpan di storage
+                  privat.
+                </p>
+                {photoError && (
+                  <p className="text-[11px] text-red-600 font-medium">
+                    {photoError}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -218,7 +360,7 @@ function EditPlayerPage() {
                   className="flex-1 px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
                 />
                 {dateOfBirth && (
-                  <span className="inline-flex items-center px-2.5 py-1.5 rounded text-xs font-semibold bg-[#e8f5f1] text-[#143d32] border border-[#bce3d6] shrink-0 tabular-nums">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-[#e8f5f1] text-[#143d32] border border-[#bce3d6] tabular-nums whitespace-nowrap">
                     {liveKU} {liveAge !== null ? `(${liveAge} thn)` : ''}
                   </span>
                 )}
@@ -230,7 +372,7 @@ function EditPlayerPage() {
                 htmlFor="address"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Alamat Tempat Tinggal <span className="text-red-500">*</span>
+                Alamat Tinggal Lengkap <span className="text-red-500">*</span>
               </label>
               <textarea
                 id="address"
@@ -244,10 +386,10 @@ function EditPlayerPage() {
           </div>
         </div>
 
-        {/* Section 2: Administrasi & Posisi */}
+        {/* Section 2: Data Keanggotaan & Sepak Bola */}
         <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm space-y-4">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F2C59] border-b border-[#e2e8f0] pb-2">
-            2. Posisi Bermain & Status
+            2. Posisi Lapangan & Status Keanggotaan
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -277,7 +419,8 @@ function EditPlayerPage() {
                 htmlFor="joinDate"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Tanggal Bergabung
+                Tanggal Bergabung{' '}
+                <span className="text-gray-400 font-normal">(Opsional)</span>
               </label>
               <input
                 id="joinDate"
@@ -293,7 +436,7 @@ function EditPlayerPage() {
                 htmlFor="status"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Status Keaktifan <span className="text-red-500">*</span>
+                Status Pemain <span className="text-red-500">*</span>
               </label>
               <select
                 id="status"
@@ -313,7 +456,7 @@ function EditPlayerPage() {
         {/* Section 3: Orang Tua / Wali */}
         <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm space-y-4">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F2C59] border-b border-[#e2e8f0] pb-2">
-            3. Data Orang Tua / Wali
+            3. Kontak Orang Tua / Wali
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -322,14 +465,15 @@ function EditPlayerPage() {
                 htmlFor="parentName"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Nama Orang Tua / Wali <span className="text-red-500">*</span>
+                Nama Orang Tua / Wali{' '}
+                <span className="text-gray-400 font-normal">(Opsional)</span>
               </label>
               <input
                 id="parentName"
                 type="text"
-                required
                 value={parentName}
                 onChange={(e) => setParentName(e.target.value)}
+                placeholder="Contoh: Ahmad Pratama"
                 className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
               />
             </div>
@@ -339,14 +483,15 @@ function EditPlayerPage() {
                 htmlFor="parentPhone"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                No. Telepon / WhatsApp <span className="text-red-500">*</span>
+                Nomor Telepon / WhatsApp Orang Tua{' '}
+                <span className="text-gray-400 font-normal">(Opsional)</span>
               </label>
               <input
                 id="parentPhone"
                 type="tel"
-                required
                 value={parentPhone}
                 onChange={(e) => setParentPhone(e.target.value)}
+                placeholder="Contoh: 081234567890"
                 className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
               />
             </div>
@@ -358,44 +503,72 @@ function EditPlayerPage() {
           <Link
             to="/players/$playerId"
             params={{ playerId: player.id }}
-            className="px-4 py-2.5 text-xs font-medium text-[#334155] bg-white hover:bg-gray-50 rounded-lg border border-[#cbd5e1] transition"
+            className="px-4 py-2 text-xs font-medium text-[#334155] bg-white hover:bg-gray-50 rounded-lg border border-[#cbd5e1] transition"
           >
             Batal
           </Link>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2.5 bg-[#0F2C59] hover:bg-[#1A365D] text-white text-xs font-semibold rounded-lg shadow-sm transition border border-[#0A1D3A] focus:outline-none focus:ring-2 focus:ring-[#0F2C59] disabled:opacity-50 flex items-center gap-2"
+            className="px-5 py-2 text-xs font-semibold text-white bg-[#0F2C59] hover:bg-[#1A365D] rounded-lg shadow-sm transition border border-[#0A1D3A] disabled:opacity-50 cursor-pointer"
           >
-            {isSubmitting ? (
-              <>
-                <svg
-                  className="animate-spin h-3.5 w-3.5 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                <span>Menyimpan Perubahan...</span>
-              </>
-            ) : (
-              <span>Simpan Perubahan</span>
-            )}
+            {isSubmitting ? 'Menyimpan Perubahan...' : 'Simpan Perubahan'}
           </button>
         </div>
       </form>
+
+      {/* Delete Photo Confirmation Modal */}
+      {showDeletePhotoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl border border-[#cbd5e1] shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#0f172a]">
+                  Hapus Foto Profil?
+                </h3>
+                <p className="text-xs text-[#475569] mt-1 leading-relaxed">
+                  Foto profil pemain akan dihapus dari server privat. Tampilan
+                  akan kembali menggunakan inisial nama pemain.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                disabled={isDeletingPhoto}
+                onClick={() => setShowDeletePhotoModal(false)}
+                className="px-3.5 py-2 text-xs font-medium text-[#334155] bg-white hover:bg-gray-50 rounded-lg border border-[#cbd5e1] transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingPhoto}
+                onClick={handleDeletePhoto}
+                className="px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
+              >
+                {isDeletingPhoto ? 'Menghapus...' : 'Ya, Hapus Foto'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -7,13 +7,6 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core'
 
-/**
- * Players Table — SSB MUNDINGLAYA
- *
- * NOTE: As required by PRD Section 6.1:
- * KU (Kelompok Usia), birth_year, or age_group MUST NOT be stored in the database.
- * They are derived dynamically from `date_of_birth` at the application layer.
- */
 export const players = pgTable(
   'players',
   {
@@ -23,8 +16,8 @@ export const players = pgTable(
     dateOfBirth: date('date_of_birth').notNull(),
     address: text('address').notNull(),
     playingPosition: varchar('playing_position', { length: 50 }).notNull(),
-    parentName: varchar('parent_name', { length: 150 }).notNull(),
-    parentPhone: varchar('parent_phone', { length: 30 }).notNull(),
+    parentName: varchar('parent_name', { length: 150 }),
+    parentPhone: varchar('parent_phone', { length: 30 }),
     joinDate: date('join_date'),
     status: varchar('status', { length: 20 }).notNull().default('active'),
     profilePhotoKey: text('profile_photo_key'),

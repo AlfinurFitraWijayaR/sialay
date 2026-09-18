@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import {
   createFileRoute,
   Link,
@@ -25,6 +25,8 @@ export const Route = createFileRoute('/players/create')({
 
 function CreatePlayerPage() {
   const router = useRouter()
+  const photoInputRef = useRef<HTMLInputElement>(null)
+
   const [fullName, setFullName] = useState('')
   const [placeOfBirth, setPlaceOfBirth] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
@@ -37,11 +39,61 @@ function CreatePlayerPage() {
   const [joinDate, setJoinDate] = useState('')
   const [status, setStatus] = useState<'active' | 'inactive'>('active')
 
+  // Photo state
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const liveKU = calculateKU(dateOfBirth)
   const liveAge = calculateAge(dateOfBirth)
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setPhotoError(null)
+
+    // Check size limit: 2MB
+    if (file.size > 2 * 1024 * 1024) {
+      setPhotoError(
+        `Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(2)} MB) melebihi batas maksimum 2MB. Silakan pilih berkas lebih kecil.`,
+      )
+      if (photoInputRef.current) photoInputRef.current.value = ''
+      return
+    }
+
+    // Check mime type
+    const validMimes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!validMimes.includes(file.type)) {
+      setPhotoError(
+        'Format berkas tidak didukung. Harap pilih gambar dengan format JPEG, PNG, atau WebP.',
+      )
+      if (photoInputRef.current) photoInputRef.current.value = ''
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = reader.result as string
+      setPhotoPreview(dataUrl)
+      setPhotoBase64(dataUrl)
+    }
+    reader.onerror = () => {
+      setPhotoError('Gagal membaca berkas gambar.')
+      if (photoInputRef.current) photoInputRef.current.value = ''
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleClearPhoto = () => {
+    setPhotoPreview(null)
+    setPhotoBase64(null)
+    setPhotoError(null)
+    if (photoInputRef.current) photoInputRef.current.value = ''
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,14 +115,6 @@ function CreatePlayerPage() {
       setError('Alamat lengkap wajib diisi.')
       return
     }
-    if (!parentName.trim()) {
-      setError('Nama orang tua / wali wajib diisi.')
-      return
-    }
-    if (!parentPhone.trim()) {
-      setError('Nomor telepon / WhatsApp orang tua wajib diisi.')
-      return
-    }
 
     setIsSubmitting(true)
     try {
@@ -81,10 +125,11 @@ function CreatePlayerPage() {
           dateOfBirth,
           address,
           playingPosition,
-          parentName,
-          parentPhone,
+          parentName: parentName || undefined,
+          parentPhone: parentPhone || undefined,
           joinDate: joinDate || undefined,
           status,
+          photoBase64: photoBase64 || undefined,
         },
       })
 
@@ -121,35 +166,87 @@ function CreatePlayerPage() {
         </div>
       </div>
 
-      {error && (
-        <div
-          role="alert"
-          className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5"
-        >
-          <svg
-            className="w-4 h-4 text-red-600 shrink-0 mt-0.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span className="font-medium">{error}</span>
-        </div>
-      )}
-
       {/* Form Card */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Section 1: Identitas Pribadi */}
+        {/* Section 1: Identitas Pribadi & Foto */}
         <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm space-y-4">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F2C59] border-b border-[#e2e8f0] pb-2">
-            1. Biodata Pribadi Pemain
+            1. Biodata Pribadi Pemain & Foto Profil
           </h2>
+
+          {/* Optional Profile Photo Selector */}
+          <div className="p-4 rounded-lg bg-[#f8fafc] border border-[#e2e8f0]">
+            <div className="text-xs font-semibold text-[#334155] mb-2">
+              Foto Profil Pemain{' '}
+              <span className="text-[#64748b] font-normal">(Opsional)</span>
+            </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="w-20 h-20 rounded-xl overflow-hidden border border-[#cbd5e1] bg-white flex items-center justify-center shrink-0 shadow-2xs">
+                {photoPreview ? (
+                  <img
+                    src={photoPreview}
+                    alt="Pratinjau foto profil"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="text-center p-2 text-gray-400">
+                    <svg
+                      className="w-7 h-7 mx-auto stroke-current"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                    <span className="text-[9px] block leading-tight mt-0.5">
+                      Belum ada
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5 flex-1">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    className="px-3 py-1.5 text-xs font-medium text-[#0F2C59] bg-white hover:bg-gray-50 rounded-lg border border-[#cbd5e1] transition cursor-pointer"
+                  >
+                    {photoPreview ? 'Ganti Berkas Foto' : 'Pilih Berkas Foto'}
+                  </button>
+                  {photoPreview && (
+                    <button
+                      type="button"
+                      onClick={handleClearPhoto}
+                      className="px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition cursor-pointer"
+                    >
+                      Hapus Pilihan
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
+                <p className="text-[11px] text-[#64748b]">
+                  Format berkas: JPG, PNG, atau WebP. Ukuran maksimal 2MB.
+                  Tersimpan di storage privat terproteksi.
+                </p>
+                {photoError && (
+                  <p className="text-[11px] text-red-600 font-medium">
+                    {photoError}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -202,17 +299,21 @@ function CreatePlayerPage() {
                   required
                   value={dateOfBirth}
                   onChange={(e) => setDateOfBirth(e.target.value)}
-                  className="flex-1 px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
+                  className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
                 />
-                {dateOfBirth && (
-                  <span className="inline-flex items-center px-2.5 py-1.5 rounded text-xs font-semibold bg-[#e8f5f1] text-[#143d32] border border-[#bce3d6] shrink-0 tabular-nums">
+              </div>
+
+              {/* Dynamic live preview of KU badge (PRD Rule) */}
+              {dateOfBirth && (
+                <div className="mt-1.5 flex items-center gap-2">
+                  <span className="text-[11px] text-[#64748b]">
+                    Pratinjau Kelompok Usia:
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-[#e8f5f1] text-[#143d32] border border-[#bce3d6] tabular-nums">
                     {liveKU} {liveAge !== null ? `(${liveAge} thn)` : ''}
                   </span>
-                )}
-              </div>
-              <p className="text-[11px] text-[#64748b] mt-1">
-                KU dihitung otomatis dari tahun lahir pemain.
-              </p>
+                </div>
+              )}
             </div>
 
             <div className="md:col-span-2">
@@ -220,7 +321,7 @@ function CreatePlayerPage() {
                 htmlFor="address"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Alamat Tempat Tinggal <span className="text-red-500">*</span>
+                Alamat Tinggal Lengkap <span className="text-red-500">*</span>
               </label>
               <textarea
                 id="address"
@@ -228,17 +329,17 @@ function CreatePlayerPage() {
                 rows={2}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder="Alamat lengkap domisili pemain saat ini"
+                placeholder="Jl. Terusan Cibaduyut No. 12, Kel. Cangkuang Kulon, Kec. Dayeuhkolot, Kab. Bandung"
                 className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
               />
             </div>
           </div>
         </div>
 
-        {/* Section 2: Administrasi & Posisi */}
+        {/* Section 2: Data Keanggotaan & Sepak Bola */}
         <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm space-y-4">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F2C59] border-b border-[#e2e8f0] pb-2">
-            2. Posisi Bermain & Administrasi Klub
+            2. Posisi Lapangan & Status Keanggotaan
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -269,7 +370,7 @@ function CreatePlayerPage() {
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
                 Tanggal Bergabung{' '}
-                <span className="text-gray-400">(Opsional)</span>
+                <span className="text-gray-400 font-normal">(Opsional)</span>
               </label>
               <input
                 id="joinDate"
@@ -285,7 +386,7 @@ function CreatePlayerPage() {
                 htmlFor="status"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Status Keaktifan <span className="text-red-500">*</span>
+                Status Pemain <span className="text-red-500">*</span>
               </label>
               <select
                 id="status"
@@ -305,7 +406,7 @@ function CreatePlayerPage() {
         {/* Section 3: Orang Tua / Wali */}
         <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm space-y-4">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F2C59] border-b border-[#e2e8f0] pb-2">
-            3. Data Orang Tua / Wali
+            3. Kontak Orang Tua / Wali
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -314,15 +415,15 @@ function CreatePlayerPage() {
                 htmlFor="parentName"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Nama Orang Tua / Wali <span className="text-red-500">*</span>
+                Nama Orang Tua / Wali{' '}
+                <span className="text-gray-400 font-normal">(Opsional)</span>
               </label>
               <input
                 id="parentName"
                 type="text"
-                required
                 value={parentName}
                 onChange={(e) => setParentName(e.target.value)}
-                placeholder="Contoh: Budi Santoso"
+                placeholder="Contoh: Ahmad Pratama"
                 className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
               />
             </div>
@@ -332,12 +433,12 @@ function CreatePlayerPage() {
                 htmlFor="parentPhone"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                No. Telepon / WhatsApp <span className="text-red-500">*</span>
+                Nomor Telepon / WhatsApp Orang Tua{' '}
+                <span className="text-gray-400 font-normal">(Opsional)</span>
               </label>
               <input
                 id="parentPhone"
                 type="tel"
-                required
                 value={parentPhone}
                 onChange={(e) => setParentPhone(e.target.value)}
                 placeholder="Contoh: 081234567890"
@@ -347,45 +448,42 @@ function CreatePlayerPage() {
           </div>
         </div>
 
+        {error && (
+          <div
+            role="alert"
+            className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5"
+          >
+            <svg
+              className="w-4 h-4 text-red-600 shrink-0 mt-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span className="font-medium">{error}</span>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex items-center justify-end gap-3 pt-2">
           <Link
             to="/players"
-            className="px-4 py-2.5 text-xs font-medium text-[#334155] bg-white hover:bg-gray-50 rounded-lg border border-[#cbd5e1] transition"
+            className="px-4 py-2 text-xs font-medium text-[#334155] bg-white hover:bg-gray-50 rounded-lg border border-[#cbd5e1] transition"
           >
             Batal
           </Link>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2.5 bg-[#0F2C59] hover:bg-[#1A365D] text-white text-xs font-semibold rounded-lg shadow-sm transition border border-[#0A1D3A] focus:outline-none focus:ring-2 focus:ring-[#0F2C59] disabled:opacity-50 flex items-center gap-2"
+            className="px-5 py-2 text-xs font-semibold text-white bg-[#0F2C59] hover:bg-[#1A365D] rounded-lg shadow-sm transition border border-[#0A1D3A] disabled:opacity-50 cursor-pointer"
           >
-            {isSubmitting ? (
-              <>
-                <svg
-                  className="animate-spin h-3.5 w-3.5 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                <span>Menyimpan...</span>
-              </>
-            ) : (
-              <span>Simpan Data Pemain</span>
-            )}
+            {isSubmitting ? 'Menyimpan Data...' : 'Simpan Data Pemain'}
           </button>
         </div>
       </form>

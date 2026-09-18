@@ -1,15 +1,30 @@
 import crypto from 'node:crypto'
 import { createServerFn } from '@tanstack/react-start'
-import { count, desc, eq } from 'drizzle-orm'
+import type { SQL } from 'drizzle-orm'
+import { and, count, desc, eq, gte, ilike, lte } from 'drizzle-orm'
 import { calculateAge, calculateKU } from '../../lib/player-utils'
 import { getCurrentSession } from '../auth/session'
 import { db } from '../db'
 import type { Player } from '../db/schema'
 import { players } from '../db/schema'
+import {
+  deletePlayerPhoto,
+  getPhotoDataUrl,
+  savePlayerPhoto,
+} from '../storage/photo-storage'
 
 export interface PlayerListItem extends Player {
   ku: string
   age: number | null
+  photoDataUrl?: string | null
+}
+
+export interface GetPlayersFilter {
+  page?: number
+  pageSize?: number
+  search?: string
+  status?: 'active' | 'inactive' | 'all'
+  birthYear?: number
 }
 
 export interface PaginatedPlayersResult {
@@ -18,16 +33,28 @@ export interface PaginatedPlayersResult {
   page: number
   pageSize: number
   totalPages: number
+  availableBirthYears: number[]
 }
 
-/**
- * Server Function: Get Paginated Players List
- */
+// Get Players List with Search & Filter (F06)
 export const getPlayersFn = createServerFn({ method: 'GET' })
-  .validator((opts?: { page?: number; pageSize?: number }) => {
+  .validator((opts?: GetPlayersFilter) => {
     const page = Math.max(1, Number(opts?.page || 1))
     const pageSize = Math.min(50, Math.max(5, Number(opts?.pageSize || 15)))
-    return { page, pageSize }
+    const search =
+      typeof opts?.search === 'string' && opts.search.trim() !== ''
+        ? opts.search.trim()
+        : undefined
+    const status =
+      opts?.status === 'active' || opts?.status === 'inactive'
+        ? opts.status
+        : undefined
+    const birthYear =
+      opts?.birthYear && !isNaN(Number(opts.birthYear)) && Number(opts.birthYear) > 1900
+        ? Number(opts.birthYear)
+        : undefined
+
+    return { page, pageSize, search, status, birthYear }
   })
   .handler(async ({ data }): Promise<PaginatedPlayersResult> => {
     const auth = await getCurrentSession()
@@ -35,27 +62,65 @@ export const getPlayersFn = createServerFn({ method: 'GET' })
       throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
     }
 
-    const { page, pageSize } = data
+    const { page, pageSize, search, status, birthYear } = data
     const offset = (page - 1) * pageSize
 
-    const [totalRows, rows] = await Promise.all([
-      db.select({ val: count() }).from(players),
+    const conditions: SQL[] = []
+
+    if (search) {
+      conditions.push(ilike(players.fullName, `%${search}%`))
+    }
+
+    if (status) {
+      conditions.push(eq(players.status, status))
+    }
+
+    if (birthYear) {
+      // PRD Section 6.1 & F06: Calculate KU from date_of_birth, no DB column
+      conditions.push(gte(players.dateOfBirth, `${birthYear}-01-01`))
+      conditions.push(lte(players.dateOfBirth, `${birthYear}-12-31`))
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined
+
+    const [totalRows, rows, allDobRows] = await Promise.all([
+      db
+        .select({ val: count() })
+        .from(players)
+        .where(whereClause),
       db
         .select()
         .from(players)
+        .where(whereClause)
         .orderBy(desc(players.createdAt))
         .limit(pageSize)
         .offset(offset),
+      db
+        .selectDistinct({ dateOfBirth: players.dateOfBirth })
+        .from(players),
     ])
 
     const totalCount = totalRows[0]?.val ?? 0
     const totalPages = Math.ceil(totalCount / pageSize) || 1
 
-    const listWithDerivedKU: PlayerListItem[] = rows.map((p) => ({
-      ...p,
-      ku: calculateKU(p.dateOfBirth),
-      age: calculateAge(p.dateOfBirth),
-    }))
+    const availableBirthYears = Array.from(
+      new Set(
+        allDobRows
+          .map((r) => new Date(r.dateOfBirth).getFullYear())
+          .filter((y) => !isNaN(y) && y > 1900),
+      ),
+    ).sort((a, b) => b - a)
+
+    const listWithDerivedKU: PlayerListItem[] = await Promise.all(
+      rows.map(async (p) => ({
+        ...p,
+        ku: calculateKU(p.dateOfBirth),
+        age: calculateAge(p.dateOfBirth),
+        photoDataUrl: p.profilePhotoKey
+          ? await getPhotoDataUrl(p.profilePhotoKey)
+          : null,
+      })),
+    )
 
     return {
       players: listWithDerivedKU,
@@ -63,12 +128,11 @@ export const getPlayersFn = createServerFn({ method: 'GET' })
       page,
       pageSize,
       totalPages,
+      availableBirthYears,
     }
   })
 
-/**
- * Server Function: Get Single Player Detail by ID
- */
+// Get Single Player Detail by ID
 export const getPlayerDetailFn = createServerFn({ method: 'GET' })
   .validator((opts: { id: string }) => {
     if (!opts.id) {
@@ -93,10 +157,15 @@ export const getPlayerDetailFn = createServerFn({ method: 'GET' })
     }
 
     const player = results[0]
+    const photoDataUrl = player.profilePhotoKey
+      ? await getPhotoDataUrl(player.profilePhotoKey)
+      : null
+
     return {
       ...player,
       ku: calculateKU(player.dateOfBirth),
       age: calculateAge(player.dateOfBirth),
+      photoDataUrl,
     }
   })
 
@@ -106,15 +175,14 @@ export interface CreatePlayerInput {
   dateOfBirth: string
   address: string
   playingPosition: string
-  parentName: string
-  parentPhone: string
+  parentName?: string
+  parentPhone?: string
   joinDate?: string
   status?: string
+  photoBase64?: string
 }
 
-/**
- * Server Function: Create New Player
- */
+// Create players
 export const createPlayerFn = createServerFn({ method: 'POST' })
   .validator((data: unknown): CreatePlayerInput => {
     if (!data || typeof data !== 'object') {
@@ -153,20 +221,6 @@ export const createPlayerFn = createServerFn({ method: 'POST' })
     if (!d.playingPosition || typeof d.playingPosition !== 'string') {
       throw new Error('Posisi bermain wajib dipilih')
     }
-    if (
-      !d.parentName ||
-      typeof d.parentName !== 'string' ||
-      d.parentName.trim() === ''
-    ) {
-      throw new Error('Nama orang tua/wali wajib diisi')
-    }
-    if (
-      !d.parentPhone ||
-      typeof d.parentPhone !== 'string' ||
-      d.parentPhone.trim() === ''
-    ) {
-      throw new Error('Nomor telepon/WhatsApp orang tua wajib diisi')
-    }
 
     return {
       fullName: d.fullName.trim(),
@@ -174,13 +228,23 @@ export const createPlayerFn = createServerFn({ method: 'POST' })
       dateOfBirth: d.dateOfBirth.trim(),
       address: d.address.trim(),
       playingPosition: d.playingPosition.trim(),
-      parentName: d.parentName.trim(),
-      parentPhone: d.parentPhone.trim(),
+      parentName:
+        typeof d.parentName === 'string' && d.parentName.trim() !== ''
+          ? d.parentName.trim()
+          : undefined,
+      parentPhone:
+        typeof d.parentPhone === 'string' && d.parentPhone.trim() !== ''
+          ? d.parentPhone.trim()
+          : undefined,
       joinDate:
         typeof d.joinDate === 'string' && d.joinDate.trim() !== ''
           ? d.joinDate.trim()
           : undefined,
       status: d.status === 'inactive' ? 'inactive' : 'active',
+      photoBase64:
+        typeof d.photoBase64 === 'string' && d.photoBase64.trim() !== ''
+          ? d.photoBase64.trim()
+          : undefined,
     }
   })
   .handler(async ({ data }) => {
@@ -190,6 +254,14 @@ export const createPlayerFn = createServerFn({ method: 'POST' })
     }
 
     const newId = crypto.randomUUID()
+    let savedPhotoKey: string | null = null
+
+    if (data.photoBase64) {
+      const base64Data = data.photoBase64.replace(/^data:[^;]+;base64,/, '')
+      const buffer = Buffer.from(base64Data, 'base64')
+      const { key } = await savePlayerPhoto(buffer)
+      savedPhotoKey = key
+    }
 
     await db.insert(players).values({
       id: newId,
@@ -198,22 +270,30 @@ export const createPlayerFn = createServerFn({ method: 'POST' })
       dateOfBirth: data.dateOfBirth,
       address: data.address,
       playingPosition: data.playingPosition,
-      parentName: data.parentName,
-      parentPhone: data.parentPhone,
+      parentName: data.parentName || null,
+      parentPhone: data.parentPhone || null,
       joinDate: data.joinDate || null,
       status: data.status || 'active',
+      profilePhotoKey: savedPhotoKey,
     })
 
     return { success: true, id: newId }
   })
 
-export interface UpdatePlayerInput extends CreatePlayerInput {
+export interface UpdatePlayerInput {
   id: string
+  fullName: string
+  placeOfBirth: string
+  dateOfBirth: string
+  address: string
+  playingPosition: string
+  parentName?: string
+  parentPhone?: string
+  joinDate?: string
+  status?: string
 }
 
-/**
- * Server Function: Update Player Details
- */
+// Update Player
 export const updatePlayerFn = createServerFn({ method: 'POST' })
   .validator((data: unknown): UpdatePlayerInput => {
     if (!data || typeof data !== 'object') {
@@ -250,20 +330,6 @@ export const updatePlayerFn = createServerFn({ method: 'POST' })
     if (!d.playingPosition || typeof d.playingPosition !== 'string') {
       throw new Error('Posisi bermain wajib dipilih')
     }
-    if (
-      !d.parentName ||
-      typeof d.parentName !== 'string' ||
-      d.parentName.trim() === ''
-    ) {
-      throw new Error('Nama orang tua/wali wajib diisi')
-    }
-    if (
-      !d.parentPhone ||
-      typeof d.parentPhone !== 'string' ||
-      d.parentPhone.trim() === ''
-    ) {
-      throw new Error('Nomor telepon orang tua wajib diisi')
-    }
 
     return {
       id: d.id.trim(),
@@ -272,8 +338,14 @@ export const updatePlayerFn = createServerFn({ method: 'POST' })
       dateOfBirth: d.dateOfBirth.trim(),
       address: d.address.trim(),
       playingPosition: d.playingPosition.trim(),
-      parentName: d.parentName.trim(),
-      parentPhone: d.parentPhone.trim(),
+      parentName:
+        typeof d.parentName === 'string' && d.parentName.trim() !== ''
+          ? d.parentName.trim()
+          : undefined,
+      parentPhone:
+        typeof d.parentPhone === 'string' && d.parentPhone.trim() !== ''
+          ? d.parentPhone.trim()
+          : undefined,
       joinDate:
         typeof d.joinDate === 'string' && d.joinDate.trim() !== ''
           ? d.joinDate.trim()
@@ -295,8 +367,8 @@ export const updatePlayerFn = createServerFn({ method: 'POST' })
         dateOfBirth: data.dateOfBirth,
         address: data.address,
         playingPosition: data.playingPosition,
-        parentName: data.parentName,
-        parentPhone: data.parentPhone,
+        parentName: data.parentName || null,
+        parentPhone: data.parentPhone || null,
         joinDate: data.joinDate || null,
         status: data.status || 'active',
         updatedAt: new Date(),
@@ -306,9 +378,7 @@ export const updatePlayerFn = createServerFn({ method: 'POST' })
     return { success: true }
   })
 
-/**
- * Server Function: Quick Toggle Status
- */
+// Update Status Pemain
 export const updatePlayerStatusFn = createServerFn({ method: 'POST' })
   .validator((opts: { id: string; status: 'active' | 'inactive' }) => {
     if (!opts.id) {
@@ -333,9 +403,7 @@ export const updatePlayerStatusFn = createServerFn({ method: 'POST' })
     return { success: true }
   })
 
-/**
- * Server Function: Delete Player
- */
+// Delete Players
 export const deletePlayerFn = createServerFn({ method: 'POST' })
   .validator((opts: { id: string }) => {
     if (!opts.id) {
@@ -349,6 +417,138 @@ export const deletePlayerFn = createServerFn({ method: 'POST' })
       throw new Error('Akses tidak diizinkan.')
     }
 
+    const rows = await db
+      .select({ profilePhotoKey: players.profilePhotoKey })
+      .from(players)
+      .where(eq(players.id, data.id))
+      .limit(1)
+
+    if (rows.length > 0 && rows[0].profilePhotoKey) {
+      await deletePlayerPhoto(rows[0].profilePhotoKey)
+    }
+
     await db.delete(players).where(eq(players.id, data.id))
     return { success: true }
+  })
+
+// Upload atau Replace PP
+export const uploadPlayerPhotoFn = createServerFn({ method: 'POST' })
+  .validator(
+    (opts: { playerId: string; fileBase64: string; fileName?: string }) => {
+      if (!opts.playerId || typeof opts.playerId !== 'string') {
+        throw new Error('ID Pemain wajib disertakan.')
+      }
+      if (!opts.fileBase64 || typeof opts.fileBase64 !== 'string') {
+        throw new Error('Data foto wajib disertakan.')
+      }
+      return opts
+    },
+  )
+  .handler(async ({ data }) => {
+    const auth = await getCurrentSession()
+    if (!auth) {
+      throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
+    }
+
+    const rows = await db
+      .select()
+      .from(players)
+      .where(eq(players.id, data.playerId))
+      .limit(1)
+
+    if (rows.length === 0) {
+      throw new Error('Data pemain tidak ditemukan.')
+    }
+
+    const existingPlayer = rows[0]
+    const base64Data = data.fileBase64.replace(/^data:[^;]+;base64,/, '')
+    const buffer = Buffer.from(base64Data, 'base64')
+
+    // Save new photo to private storage (validates size & magic bytes)
+    const { key } = await savePlayerPhoto(buffer)
+
+    // Delete old photo file if replacing
+    if (existingPlayer.profilePhotoKey) {
+      await deletePlayerPhoto(existingPlayer.profilePhotoKey)
+    }
+
+    // Update database
+    await db
+      .update(players)
+      .set({
+        profilePhotoKey: key,
+        updatedAt: new Date(),
+      })
+      .where(eq(players.id, data.playerId))
+
+    const photoDataUrl = await getPhotoDataUrl(key)
+    return { success: true, key, photoDataUrl }
+  })
+
+// Remove Player Profile Photo
+export const deletePlayerPhotoFn = createServerFn({ method: 'POST' })
+  .validator((opts: { playerId: string }) => {
+    if (!opts.playerId || typeof opts.playerId !== 'string') {
+      throw new Error('ID Pemain wajib disertakan.')
+    }
+    return opts
+  })
+  .handler(async ({ data }) => {
+    const auth = await getCurrentSession()
+    if (!auth) {
+      throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
+    }
+
+    const rows = await db
+      .select()
+      .from(players)
+      .where(eq(players.id, data.playerId))
+      .limit(1)
+
+    if (rows.length === 0) {
+      throw new Error('Data pemain tidak ditemukan.')
+    }
+
+    const existingPlayer = rows[0]
+    if (existingPlayer.profilePhotoKey) {
+      await deletePlayerPhoto(existingPlayer.profilePhotoKey)
+    }
+
+    await db
+      .update(players)
+      .set({
+        profilePhotoKey: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(players.id, data.playerId))
+
+    return { success: true }
+  })
+
+// Get Protected Player Profile Photo
+export const getPlayerPhotoFn = createServerFn({ method: 'GET' })
+  .validator((opts: { playerId: string }) => {
+    if (!opts.playerId || typeof opts.playerId !== 'string') {
+      throw new Error('ID Pemain tidak valid.')
+    }
+    return opts
+  })
+  .handler(async ({ data }) => {
+    const auth = await getCurrentSession()
+    if (!auth) {
+      throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
+    }
+
+    const rows = await db
+      .select({ profilePhotoKey: players.profilePhotoKey })
+      .from(players)
+      .where(eq(players.id, data.playerId))
+      .limit(1)
+
+    if (rows.length === 0 || !rows[0].profilePhotoKey) {
+      return { photoDataUrl: null }
+    }
+
+    const photoDataUrl = await getPhotoDataUrl(rows[0].profilePhotoKey)
+    return { photoDataUrl }
   })
