@@ -1,20 +1,48 @@
 @import 'tailwindcss';
 
+@theme {
+  /* SSB MUNDINGLAYA Primary Identity Tokens (#FBC02D - Golden Yellow) */
+  --color-primary: #fbc02d;
+  --color-primary-hover: #e5a800;
+  --color-primary-dark: #b78103;
+  --color-primary-text: #0f172a;
+  --color-primary-light: #fffbeb;
+  --color-primary-subtle: #fef9c3;
+  --color-primary-border: #fde047;
+
+  /* SSB MUNDINGLAYA Secondary Identity Tokens (#C62828 - Deep Crimson) */
+  --color-secondary: #c62828;
+  --color-secondary-hover: #b71c1c;
+  --color-secondary-dark: #8e0000;
+  --color-secondary-text: #ffffff;
+  --color-secondary-light: #fef2f2;
+  --color-secondary-subtle: #fee2e2;
+  --color-secondary-border: #fecaca;
+}
+
 @layer theme {
   :root {
     /* SSB MUNDINGLAYA Identity Tokens */
-    --color-pitch-900: #0d2820;
-    --color-pitch-800: #143d32;
-    --color-pitch-700: #1b4d3e;
-    --color-pitch-600: #266b56;
-    --color-pitch-500: #328a6f;
-    --color-pitch-100: #e8f5f1;
-    --color-pitch-50: #f2f9f6;
+    --color-primary: #fbc02d;
+    --color-primary-hover: #e5a800;
+    --color-primary-dark: #b78103;
+    --color-primary-text: #0f172a;
+    --color-primary-light: #fffbeb;
+    --color-primary-subtle: #fef9c3;
+    --color-primary-border: #fde047;
+
+    --color-secondary: #c62828;
+    --color-secondary-hover: #b71c1c;
+    --color-secondary-dark: #8e0000;
+    --color-secondary-text: #ffffff;
+    --color-secondary-light: #fef2f2;
+    --color-secondary-subtle: #fee2e2;
+    --color-secondary-border: #fecaca;
 
     /* Neutrals */
     --bg-app: #f8fafc;
     --bg-surface: #ffffff;
-    --bg-sidebar: #0f1c18;
+    --bg-sidebar: #ffffff;
     --text-main: #0f172a;
     --text-muted: #475569;
     --border-subtle: #e2e8f0;
@@ -25,7 +53,7 @@
     --status-success-bg: #dcfce7;
     --status-warning: #b45309;
     --status-warning-bg: #fef3c7;
-    --status-danger: #b91c1c;
+    --status-danger: #c62828;
     --status-danger-bg: #fee2e2;
   }
 }
@@ -36,7 +64,7 @@ body {
   color: var(--text-main);
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
-    Arial, sans-serif;
+      Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 0;

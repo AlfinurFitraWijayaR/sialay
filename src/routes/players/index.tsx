@@ -177,7 +177,7 @@ function PlayerListPage() {
         <div>
           <Link
             to="/players/create"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0F2C59] hover:bg-[#1A365D] text-white text-xs font-semibold rounded-lg shadow-sm transition border border-[#0A1D3A] focus:outline-none focus:ring-2 focus:ring-[#0F2C59]"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#FBC02D] hover:bg-[#E5A800] text-[#0f172a] text-xs font-semibold rounded-lg shadow-sm transition border border-[#FDE047] focus:outline-none focus:ring-2 focus:ring-[#FBC02D]"
           >
             <svg
               className="w-4 h-4"
@@ -225,7 +225,7 @@ function PlayerListPage() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Cari nama pemain..."
-              className="w-full pl-9 pr-8 py-2 text-xs bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
+              className="w-full pl-9 pr-8 py-2 text-xs bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D]"
             />
             {searchInput && (
               <button
@@ -263,7 +263,7 @@ function PlayerListPage() {
               onClick={() => handleStatusChange('all')}
               className={`px-3 py-1.5 text-xs font-semibold rounded-md transition cursor-pointer ${
                 !searchParams.status
-                  ? 'bg-white text-[#0F2C59] shadow-xs'
+                  ? 'bg-white text-[#0f172a] shadow-xs'
                   : 'text-[#64748b] hover:text-[#0f172a]'
               }`}
             >
@@ -274,7 +274,7 @@ function PlayerListPage() {
               onClick={() => handleStatusChange('active')}
               className={`px-3 py-1.5 text-xs font-semibold rounded-md transition cursor-pointer ${
                 searchParams.status === 'active'
-                  ? 'bg-emerald-600 text-white shadow-xs'
+                  ? 'bg-[#FBC02D] text-[#0f172a] shadow-xs font-bold'
                   : 'text-[#64748b] hover:text-[#0f172a]'
               }`}
             >
@@ -300,7 +300,7 @@ function PlayerListPage() {
                 searchParams.birthYear ? String(searchParams.birthYear) : ''
               }
               onChange={(e) => handleBirthYearChange(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59] cursor-pointer"
+              className="w-full px-3 py-2 text-xs bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D] cursor-pointer"
             >
               <option value="">Semua Kelompok Usia (KU)</option>
               {availableBirthYears.map((year) => (
@@ -315,7 +315,7 @@ function PlayerListPage() {
           <button
             type="button"
             onClick={() => handleSearchSubmit()}
-            className="px-4 py-2 bg-[#0F2C59] hover:bg-[#1A365D] text-white text-xs font-semibold rounded-lg shadow-sm transition border border-[#0A1D3A] cursor-pointer shrink-0"
+            className="px-4 py-2 bg-[#FBC02D] hover:bg-[#E5A800] text-[#0f172a] text-xs font-semibold rounded-lg shadow-sm transition border border-[#FDE047] cursor-pointer shrink-0 focus:outline-none focus:ring-2 focus:ring-[#FBC02D]"
           >
             Cari
           </button>
@@ -357,7 +357,7 @@ function PlayerListPage() {
                           }),
                         })
                       }}
-                      className="hover:text-red-600 cursor-pointer font-bold ml-0.5"
+                      className="hover:text-[#C62828] cursor-pointer font-bold ml-0.5"
                     >
                       ×
                     </button>
@@ -380,7 +380,7 @@ function PlayerListPage() {
                           }),
                         })
                       }
-                      className="hover:text-red-600 cursor-pointer font-bold ml-0.5"
+                      className="hover:text-[#C62828] cursor-pointer font-bold ml-0.5"
                     >
                       ×
                     </button>
@@ -400,7 +400,7 @@ function PlayerListPage() {
                           }),
                         })
                       }
-                      className="hover:text-red-600 cursor-pointer font-bold ml-0.5"
+                      className="hover:text-[#C62828] cursor-pointer font-bold ml-0.5"
                     >
                       ×
                     </button>
@@ -414,7 +414,7 @@ function PlayerListPage() {
             <button
               type="button"
               onClick={handleResetFilters}
-              className="text-xs font-semibold text-red-600 hover:text-red-700 hover:underline cursor-pointer"
+              className="text-xs font-semibold text-[#C62828] hover:text-[#B71C1C] hover:underline cursor-pointer"
             >
               Reset Filter
             </button>
@@ -454,7 +454,7 @@ function PlayerListPage() {
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#0F2C59] hover:bg-[#1A365D] text-white text-xs font-semibold rounded-lg shadow-sm transition cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#FBC02D] hover:bg-[#E5A800] text-[#0f172a] text-xs font-semibold rounded-lg shadow-sm transition border border-[#FDE047] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#FBC02D]"
               >
                 Reset Semua Filter
               </button>
@@ -486,7 +486,7 @@ function PlayerListPage() {
               </p>
               <Link
                 to="/players/create"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#0F2C59] hover:bg-[#1A365D] text-white text-xs font-semibold rounded-lg shadow-sm transition"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#FBC02D] hover:bg-[#E5A800] text-[#0f172a] text-xs font-semibold rounded-lg shadow-sm transition border border-[#FDE047] focus:outline-none focus:ring-2 focus:ring-[#FBC02D]"
               >
                 <svg
                   className="w-4 h-4"
@@ -626,14 +626,14 @@ function PlayerListPage() {
                             <Link
                               to="/players/$playerId"
                               params={{ playerId: player.id }}
-                              className="px-2 py-1 text-xs font-medium text-[#0F2C59] hover:bg-[#f1f5f9] rounded border border-[#cbd5e1] transition"
+                              className="px-2 py-1 text-xs font-medium text-[#0f172a] hover:bg-[#FEF9C3] rounded border border-[#cbd5e1] transition"
                             >
                               Detail
                             </Link>
                             <button
                               type="button"
                               onClick={() => setPlayerToDelete(player)}
-                              className="px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded border border-red-200 transition"
+                              className="px-2 py-1 text-xs font-medium text-[#C62828] hover:bg-[#FEF2F2] rounded border border-[#FECACA] transition cursor-pointer"
                             >
                               Hapus
                             </button>
@@ -700,7 +700,7 @@ function PlayerListPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl border border-[#cbd5e1] shadow-xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#C62828] flex items-center justify-center shrink-0">
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -711,20 +711,20 @@ function PlayerListPage() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                   />
                 </svg>
               </div>
               <div>
                 <h3 className="text-sm font-bold text-[#0f172a]">
-                  Konfirmasi Penghapusan Pemain
+                  Hapus Data Pemain?
                 </h3>
                 <p className="text-xs text-[#475569] mt-1 leading-relaxed">
-                  Apakah Anda yakin ingin menghapus data pemain{' '}
-                  <strong className="text-[#0f172a] font-semibold">
+                  Tindakan ini akan menghapus data{' '}
+                  <strong className="text-[#0f172a]">
                     {playerToDelete.fullName}
                   </strong>{' '}
-                  ({playerToDelete.ku})? Tindakan ini tidak dapat dibatalkan.
+                  secara permanen dari sistem.
                 </p>
               </div>
             </div>
@@ -734,7 +734,7 @@ function PlayerListPage() {
                 type="button"
                 disabled={isDeleting}
                 onClick={() => setPlayerToDelete(null)}
-                className="px-3.5 py-2 text-xs font-medium text-[#334155] bg-white hover:bg-gray-50 rounded-lg border border-[#cbd5e1] transition"
+                className="px-3.5 py-2 text-xs font-medium text-[#334155] bg-white hover:bg-gray-50 rounded-lg border border-[#cbd5e1] transition cursor-pointer"
               >
                 Batal
               </button>
@@ -742,7 +742,7 @@ function PlayerListPage() {
                 type="button"
                 disabled={isDeleting}
                 onClick={handleConfirmDelete}
-                className="px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition disabled:opacity-50"
+                className="px-4 py-2 text-xs font-semibold text-white bg-[#C62828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
               >
                 {isDeleting ? 'Menghapus...' : 'Ya, Hapus Pemain'}
               </button>

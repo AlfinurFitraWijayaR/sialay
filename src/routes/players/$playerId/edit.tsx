@@ -199,7 +199,7 @@ function EditPlayerPage() {
             <Link
               to="/players/$playerId"
               params={{ playerId: player.id }}
-              className="text-xs font-semibold text-[#0F2C59] hover:underline"
+              className="text-xs font-semibold text-[#0f172a] hover:text-[#C62828] hover:underline"
             >
               ← Batal & Kembali ke Profil Pemain
             </Link>
@@ -216,10 +216,10 @@ function EditPlayerPage() {
       {error && (
         <div
           role="alert"
-          className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5"
+          className="p-4 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#C62828] text-xs flex items-start gap-2.5"
         >
           <svg
-            className="w-4 h-4 text-red-600 shrink-0 mt-0.5"
+            className="w-4 h-4 text-[#C62828] shrink-0 mt-0.5"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -239,7 +239,7 @@ function EditPlayerPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Section 1: Identitas Pribadi & Foto */}
         <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm space-y-4">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F2C59] border-b border-[#e2e8f0] pb-2">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0f172a] border-b border-[#e2e8f0] pb-2">
             1. Biodata Pribadi Pemain & Foto Profil
           </h2>
 
@@ -257,7 +257,7 @@ function EditPlayerPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-[#1b4d3e] text-white flex items-center justify-center font-bold text-lg">
+                  <div className="w-full h-full bg-[#C62828] text-white flex items-center justify-center font-bold text-lg">
                     {player.fullName.slice(0, 2).toUpperCase()}
                   </div>
                 )}
@@ -269,7 +269,7 @@ function EditPlayerPage() {
                     type="button"
                     disabled={isUploadingPhoto}
                     onClick={() => photoInputRef.current?.click()}
-                    className="px-3 py-1.5 text-xs font-medium text-[#0F2C59] bg-white hover:bg-gray-50 rounded-lg border border-[#cbd5e1] transition cursor-pointer disabled:opacity-50"
+                    className="px-3 py-1.5 text-xs font-medium text-[#0f172a] bg-white hover:bg-gray-50 rounded-lg border border-[#cbd5e1] transition cursor-pointer disabled:opacity-50"
                   >
                     {isUploadingPhoto
                       ? 'Mengunggah...'
@@ -282,7 +282,7 @@ function EditPlayerPage() {
                       type="button"
                       disabled={isUploadingPhoto}
                       onClick={() => setShowDeletePhotoModal(true)}
-                      className="px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition cursor-pointer disabled:opacity-50"
+                      className="px-2.5 py-1.5 text-xs font-medium text-[#C62828] hover:bg-[#FEF2F2] rounded-lg border border-[#FECACA] transition cursor-pointer disabled:opacity-50"
                     >
                       Hapus Foto
                     </button>
@@ -300,7 +300,7 @@ function EditPlayerPage() {
                   privat.
                 </p>
                 {photoError && (
-                  <p className="text-[11px] text-red-600 font-medium">
+                  <p className="text-[11px] text-[#C62828] font-medium">
                     {photoError}
                   </p>
                 )}
@@ -314,7 +314,7 @@ function EditPlayerPage() {
                 htmlFor="fullName"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Nama Lengkap Pemain <span className="text-red-500">*</span>
+                Nama Lengkap Pemain <span className="text-[#C62828]">*</span>
               </label>
               <input
                 id="fullName"
@@ -322,7 +322,7 @@ function EditPlayerPage() {
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
+                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D]"
               />
             </div>
 
@@ -331,7 +331,7 @@ function EditPlayerPage() {
                 htmlFor="placeOfBirth"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Tempat Lahir <span className="text-red-500">*</span>
+                Tempat Lahir <span className="text-[#C62828]">*</span>
               </label>
               <input
                 id="placeOfBirth"
@@ -339,7 +339,7 @@ function EditPlayerPage() {
                 required
                 value={placeOfBirth}
                 onChange={(e) => setPlaceOfBirth(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
+                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D]"
               />
             </div>
 
@@ -348,7 +348,7 @@ function EditPlayerPage() {
                 htmlFor="dateOfBirth"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Tanggal Lahir <span className="text-red-500">*</span>
+                Tanggal Lahir <span className="text-[#C62828]">*</span>
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -357,10 +357,10 @@ function EditPlayerPage() {
                   required
                   value={dateOfBirth}
                   onChange={(e) => setDateOfBirth(e.target.value)}
-                  className="flex-1 px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
+                  className="flex-1 px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D]"
                 />
                 {dateOfBirth && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-[#e8f5f1] text-[#143d32] border border-[#bce3d6] tabular-nums whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-[#FEF9C3] text-[#78350F] border border-[#FDE047] tabular-nums whitespace-nowrap">
                     {liveKU} {liveAge !== null ? `(${liveAge} thn)` : ''}
                   </span>
                 )}
@@ -372,7 +372,7 @@ function EditPlayerPage() {
                 htmlFor="address"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Alamat Tinggal Lengkap <span className="text-red-500">*</span>
+                Alamat Tinggal Lengkap <span className="text-[#C62828]">*</span>
               </label>
               <textarea
                 id="address"
@@ -380,7 +380,7 @@ function EditPlayerPage() {
                 rows={2}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
+                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D]"
               />
             </div>
           </div>
@@ -388,7 +388,7 @@ function EditPlayerPage() {
 
         {/* Section 2: Data Keanggotaan & Sepak Bola */}
         <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm space-y-4">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F2C59] border-b border-[#e2e8f0] pb-2">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0f172a] border-b border-[#e2e8f0] pb-2">
             2. Posisi Lapangan & Status Keanggotaan
           </h2>
 
@@ -398,13 +398,13 @@ function EditPlayerPage() {
                 htmlFor="playingPosition"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Posisi Bermain <span className="text-red-500">*</span>
+                Posisi Bermain <span className="text-[#C62828]">*</span>
               </label>
               <select
                 id="playingPosition"
                 value={playingPosition}
                 onChange={(e) => setPlayingPosition(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
+                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D]"
               >
                 {PLAYING_POSITIONS.map((pos) => (
                   <option key={pos} value={pos}>
@@ -427,7 +427,7 @@ function EditPlayerPage() {
                 type="date"
                 value={joinDate}
                 onChange={(e) => setJoinDate(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
+                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D]"
               />
             </div>
 
@@ -436,7 +436,7 @@ function EditPlayerPage() {
                 htmlFor="status"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Status Pemain <span className="text-red-500">*</span>
+                Status Pemain <span className="text-[#C62828]">*</span>
               </label>
               <select
                 id="status"
@@ -444,7 +444,7 @@ function EditPlayerPage() {
                 onChange={(e) =>
                   setStatus(e.target.value as 'active' | 'inactive')
                 }
-                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
+                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D]"
               >
                 <option value="active">Aktif</option>
                 <option value="inactive">Non-Aktif</option>
@@ -455,7 +455,7 @@ function EditPlayerPage() {
 
         {/* Section 3: Orang Tua / Wali */}
         <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm space-y-4">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F2C59] border-b border-[#e2e8f0] pb-2">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0f172a] border-b border-[#e2e8f0] pb-2">
             3. Kontak Orang Tua / Wali
           </h2>
 
@@ -474,7 +474,7 @@ function EditPlayerPage() {
                 value={parentName}
                 onChange={(e) => setParentName(e.target.value)}
                 placeholder="Contoh: Ahmad Pratama"
-                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
+                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D]"
               />
             </div>
 
@@ -492,7 +492,7 @@ function EditPlayerPage() {
                 value={parentPhone}
                 onChange={(e) => setParentPhone(e.target.value)}
                 placeholder="Contoh: 081234567890"
-                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59]"
+                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D]"
               />
             </div>
           </div>
@@ -510,7 +510,7 @@ function EditPlayerPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-5 py-2 text-xs font-semibold text-white bg-[#0F2C59] hover:bg-[#1A365D] rounded-lg shadow-sm transition border border-[#0A1D3A] disabled:opacity-50 cursor-pointer"
+            className="px-5 py-2 text-xs font-semibold text-[#0f172a] bg-[#FBC02D] hover:bg-[#E5A800] rounded-lg shadow-sm transition border border-[#FDE047] disabled:opacity-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#FBC02D]"
           >
             {isSubmitting ? 'Menyimpan Perubahan...' : 'Simpan Perubahan'}
           </button>
@@ -522,7 +522,7 @@ function EditPlayerPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl border border-[#cbd5e1] shadow-xl max-w-sm w-full p-6 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#C62828] flex items-center justify-center shrink-0">
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -561,7 +561,7 @@ function EditPlayerPage() {
                 type="button"
                 disabled={isDeletingPhoto}
                 onClick={handleDeletePhoto}
-                className="px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-white bg-[#C62828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
               >
                 {isDeletingPhoto ? 'Menghapus...' : 'Ya, Hapus Foto'}
               </button>

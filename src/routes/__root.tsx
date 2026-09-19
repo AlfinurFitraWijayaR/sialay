@@ -1,6 +1,4 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-// import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-// import { TanStackDevtools } from '@tanstack/react-devtools'
 import { AppShell } from '../components/layout/AppShell'
 import { getAuthSessionFn } from '../server/auth/actions'
 
@@ -21,7 +19,7 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'SIALAY — Sistem Administrasi MundingLaya',
+        title: 'SIALAY - Sistem Administrasi SSB MUNDINGLAYA',
       },
       {
         name: 'description',
@@ -48,19 +46,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="font-sans antialiased text-[#0f172a] bg-[#f8fafc]">
         <AppShell admin={admin}>{children}</AppShell>
-        {/* {process.env.NODE_ENV !== 'production' && (
-          <TanStackDevtools
-            config={{
-              position: 'bottom-right',
-            }}
-            plugins={[
-              {
-                name: 'Tanstack Router',
-                render: <TanStackRouterDevtoolsPanel />,
-              },
-            ]}
-          />
-        )} */}
         <Scripts />
       </body>
     </html>

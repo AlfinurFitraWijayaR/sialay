@@ -61,7 +61,7 @@ function LoginPage() {
           {/* Header */}
           <div className="text-center mb-8">
             <img className="w-15 h-15 mx-auto mb-1" src="./icon.webp" alt="" />
-            <h1 className="text-lg font-bold uppercase text-[#0F2C59]">
+            <h1 className="text-lg font-bold uppercase text-[#0f172a]">
               SIASMUN
             </h1>
             <p className="text-xs text-[#64748b] mt-1">
@@ -73,10 +73,10 @@ function LoginPage() {
           {error && (
             <div
               role="alert"
-              className="mb-6 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2"
+              className="mb-6 p-3 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#C62828] text-xs flex items-start gap-2"
             >
               <svg
-                className="w-4 h-4 text-red-600 shrink-0 mt-0.5"
+                className="w-4 h-4 text-[#C62828] shrink-0 mt-0.5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -109,7 +109,7 @@ function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Masukkan username admin"
-                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59] transition"
+                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D] transition"
               />
             </div>
 
@@ -129,7 +129,7 @@ function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan kata sandi"
-                  className="w-full px-3 py-2 pr-10 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-1 focus:ring-[#0F2C59] focus:border-[#0F2C59] transition"
+                  className="w-full px-3 py-2 pr-10 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D] transition"
                 />
                 <button
                   type="button"
@@ -184,7 +184,7 @@ function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2.5 px-4 bg-[#0F2C59] hover:bg-[#1A365D] cursor-pointer text-white font-medium text-xs rounded-lg transition border border-[#2e6e5a] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#266b56]"
+                className="w-full py-2.5 px-4 bg-[#FBC02D] hover:bg-[#E5A800] cursor-pointer text-[#0f172a] font-semibold text-xs rounded-lg transition border border-[#FDE047] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#FBC02D]"
               >
                 {isLoading ? (
                   <>

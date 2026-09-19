@@ -2,6 +2,14 @@ import { createServerFn } from '@tanstack/react-start'
 import { eq } from 'drizzle-orm'
 import { db } from '../db'
 import { admins } from '../db/schema'
+import { logServerError, sanitizeErrorMessage } from '../security/error-handler'
+import {
+  checkLoginRateLimit,
+  clearLoginRateLimit,
+  recordFailedLogin,
+} from '../security/rate-limiter'
+import type { ValidatedLoginInput } from '../security/validation'
+import { validateLoginPayload } from '../security/validation'
 import { verifyPassword } from './security'
 import type { AuthenticatedAdmin } from './session'
 import {
@@ -15,25 +23,23 @@ export interface LoginResult {
   error?: string
 }
 
-// Administrator Login
 export const loginFn = createServerFn({ method: 'POST' })
-  .validator((data: unknown): { username: string; password: string } => {
-    if (!data || typeof data !== 'object') {
-      throw new Error('Data login tidak valid')
-    }
-    const { username, password } = data as Record<string, unknown>
-    if (!username || typeof username !== 'string' || username.trim() === '') {
-      throw new Error('Username wajib diisi')
-    }
-    if (!password || typeof password !== 'string' || password === '') {
-      throw new Error('Kata sandi wajib diisi')
-    }
-    return {
-      username: username.trim(),
-      password,
-    }
+  .validator((data: unknown): ValidatedLoginInput => {
+    return validateLoginPayload(data)
   })
   .handler(async ({ data }): Promise<LoginResult> => {
+    const rateLimitKey = data.username.toLowerCase().trim()
+
+    // 1. Cek Rate Limiting (Abuse Protection)
+    const rateCheck = checkLoginRateLimit(rateLimitKey)
+    if (!rateCheck.allowed) {
+      const waitMinutes = Math.ceil((rateCheck.retryAfterSeconds ?? 60) / 60)
+      return {
+        success: false,
+        error: `Terlalu banyak percobaan login yang gagal. Silakan coba lagi dalam ${waitMinutes} menit.`,
+      }
+    }
+
     try {
       const results = await db
         .select()
@@ -42,6 +48,13 @@ export const loginFn = createServerFn({ method: 'POST' })
         .limit(1)
 
       if (results.length === 0) {
+        const failStatus = recordFailedLogin(rateLimitKey)
+        if (failStatus.locked) {
+          return {
+            success: false,
+            error: 'Terlalu banyak percobaan gagal. Tunggu selama 15 menit.',
+          }
+        }
         return {
           success: false,
           error: 'Username atau kata sandi tidak valid.',
@@ -52,36 +65,58 @@ export const loginFn = createServerFn({ method: 'POST' })
 
       const isMatch = await verifyPassword(data.password, admin.passwordHash)
       if (!isMatch) {
+        const failStatus = recordFailedLogin(rateLimitKey)
+        if (failStatus.locked) {
+          return {
+            success: false,
+            error: 'Terlalu banyak percobaan gagal. tunggu selama 15 menit.',
+          }
+        }
         return {
           success: false,
           error: 'Username atau kata sandi tidak valid.',
         }
       }
 
+      // Login berhasil: reset catatan percobaan gagal
+      clearLoginRateLimit(rateLimitKey)
+
       await createAdminSession(admin.id)
       return { success: true }
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Terjadi kesalahan sistem'
+      logServerError('loginFn', err)
       return {
         success: false,
-        error: message,
+        error: sanitizeErrorMessage(
+          err,
+          'Terjadi kesalahan pada sistem saat memproses login.',
+        ),
       }
     }
   })
 
-//  Administrator Logout
+// Administrator Logout
 export const logoutFn = createServerFn({ method: 'POST' }).handler(
   async (): Promise<{ success: boolean }> => {
-    await destroyCurrentSession()
-    return { success: true }
+    try {
+      await destroyCurrentSession()
+      return { success: true }
+    } catch (err: unknown) {
+      logServerError('logoutFn', err)
+      return { success: true } // Tetap kembalikan true agar client membersihkan state lokal
+    }
   },
 )
 
 // Mendapatkan info admin yang sedang login
 export const getAuthSessionFn = createServerFn({ method: 'GET' }).handler(
   async (): Promise<AuthenticatedAdmin | null> => {
-    const auth = await getCurrentSession()
-    return auth?.admin ?? null
+    try {
+      const auth = await getCurrentSession()
+      return auth?.admin ?? null
+    } catch (err: unknown) {
+      logServerError('getAuthSessionFn', err)
+      return null
+    }
   },
 )

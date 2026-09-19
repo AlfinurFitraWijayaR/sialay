@@ -1,5 +1,7 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { Link, createFileRoute, redirect } from '@tanstack/react-router'
+import { DashboardCharts } from '../components/dashboard/DashboardCharts'
 import { getAuthSessionFn } from '../server/auth/actions'
+import { getDashboardStatsFn } from '../server/dashboard/actions'
 import { getSystemStatus } from '../server/db/status'
 
 export const Route = createFileRoute('/')({
@@ -10,116 +12,155 @@ export const Route = createFileRoute('/')({
     }
   },
   loader: async () => {
-    const [status, admin] = await Promise.all([
+    const [stats, status, admin] = await Promise.all([
+      getDashboardStatsFn(),
       getSystemStatus(),
       getAuthSessionFn(),
     ])
-    return { status, admin }
+    return { stats, status, admin }
   },
-  component: FoundationAndAuthPage,
+  component: DashboardPage,
 })
 
-function FoundationAndAuthPage() {
-  const { status, admin } = Route.useLoaderData()
+function DashboardPage() {
+  const { stats, status } = Route.useLoaderData()
   const dbHealth = status.database
 
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#e8f5f1] text-[#143d32] border border-[#bce3d6]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#266b56]" />
-                F01 Foundation • Selesai
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                F02 Autentikasi • Aktif
-              </span>
-            </div>
-            <h1 className="text-xl font-bold text-[#0f172a] tracking-tight">
-              Sistem Informasi SSB MUNDINGLAYA
-            </h1>
-            <p className="text-xs text-[#475569] mt-1 max-w-2xl">
-              Sesi administrator aktif terotentikasi. Semua halaman dan fungsi
-              dilindungi oleh server-side authorization check sesuai acceptance
-              criteria PRD.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium border bg-emerald-50 text-emerald-800 border-emerald-200">
-              <span className="w-2 h-2 rounded-full bg-emerald-600" />
-              Sesi Valid ({admin?.username})
-            </span>
-          </div>
-        </div>
+      {/* Title Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h1 className="text-xl md:text-2xl font-bold text-[#0f172a] tracking-tight">
+          Admin Dashboard
+        </h1>
       </div>
 
-      {/* Feature F02 Acceptance Criteria Verification Card */}
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm">
-        <h2 className="text-sm font-bold text-[#0f172a] uppercase tracking-wider mb-4 flex items-center gap-2">
-          <svg
-            className="w-4 h-4 text-[#266b56]"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
+      {/* 4 Stats Cards Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+        {/* Card Siswa */}
+        <Link
+          to="/players"
+          className="bg-white hover:bg-[#f8fafc] border border-[#e2e8f0] hover:border-[#FBC02D] rounded-2xl p-5 transition flex items-center justify-between shadow-xs group"
+        >
+          <div>
+            <span className="text-xs font-medium text-[#64748b]">Siswa</span>
+            <div className="text-2xl sm:text-3xl font-extrabold text-[#0f172a] mt-1 tracking-tight">
+              {stats.players.total}
+            </div>
+          </div>
+          <div className="w-11 h-11 rounded-xl bg-[#FEF9C3] text-[#78350F] border border-[#FDE047]/60 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <svg
+              className="w-6 h-6 text-[#78350F]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.75}
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-            />
-          </svg>
-          Status & Verifikasi Autentikasi Administrator (F02)
-        </h2>
+            >
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+              <path d="M6 12v5c3 3 9 3 12 0v-5" />
+            </svg>
+          </div>
+        </Link>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-[#f8fafc] p-4 rounded border border-[#e2e8f0]">
+        {/* Card Coach */}
+        <Link
+          to="/coaches"
+          className="bg-white hover:bg-[#f8fafc] border border-[#e2e8f0] hover:border-[#C62828] rounded-2xl p-5 transition flex items-center justify-between shadow-xs group"
+        >
           <div>
-            <div className="text-[11px] font-medium text-[#64748b]">
-              Akun Administrator
-            </div>
-            <div className="text-sm font-semibold text-[#0f172a] mt-0.5 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-              {admin?.username}
-            </div>
-            <div className="text-[10px] text-[#64748b] mt-0.5">
-              Tunggal (Non-registrasi)
+            <span className="text-xs font-medium text-[#64748b]">Coach</span>
+            <div className="text-2xl sm:text-3xl font-extrabold text-[#0f172a] mt-1 tracking-tight">
+              {stats.coaches.total}
             </div>
           </div>
+          <div className="w-11 h-11 rounded-xl bg-[#FEE2E2] text-[#C62828] border border-[#FECACA]/60 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <svg
+              className="w-6 h-6 text-[#C62828]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.75}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="7" r="4" />
+              <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+              <path d="M12 11v4" />
+              <path d="M10 15h4" />
+            </svg>
+          </div>
+        </Link>
+
+        {/* Card Administrasi Siswa */}
+        <Link
+          to="/players"
+          className="bg-white hover:bg-[#f8fafc] border border-[#e2e8f0] hover:border-[#FBC02D] rounded-2xl p-5 transition flex items-center justify-between shadow-xs group"
+        >
           <div>
-            <div className="text-[11px] font-medium text-[#64748b]">
-              Proteksi Kredensial
-            </div>
-            <div className="text-sm font-semibold text-[#0f172a] mt-0.5">
-              Bcrypt Hash (Salt 10)
-            </div>
-            <div className="text-[10px] text-[#64748b] mt-0.5">
-              Non-plaintext di Database
+            <span className="text-xs font-medium text-[#64748b]">
+              Administrasi Siswa
+            </span>
+            <div className="text-2xl sm:text-3xl font-extrabold text-[#0f172a] mt-1 tracking-tight">
+              00
             </div>
           </div>
+          <div className="w-11 h-11 rounded-xl bg-[#FEF9C3] text-[#78350F] border border-[#FDE047]/60 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <svg
+              className="w-6 h-6 text-[#78350F]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.75}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </div>
+        </Link>
+
+        {/* Card Raport Siswa */}
+        <Link
+          to="/coaches"
+          className="bg-white hover:bg-[#f8fafc] border border-[#e2e8f0] hover:border-[#C62828] rounded-2xl p-5 transition flex items-center justify-between shadow-xs group"
+        >
           <div>
-            <div className="text-[11px] font-medium text-[#64748b]">
-              Session Management
-            </div>
-            <div className="text-sm font-semibold text-[#0f172a] mt-0.5">
-              HTTP-only Cookie
-            </div>
-            <div className="text-[10px] text-[#64748b] mt-0.5">
-              Kedaluwarsa 7 Hari (Database)
+            <span className="text-xs font-medium text-[#64748b]">
+              Raport Siswa
+            </span>
+            <div className="text-2xl sm:text-3xl font-extrabold text-[#0f172a] mt-1 tracking-tight">
+              00
             </div>
           </div>
-        </div>
+          <div className="w-11 h-11 rounded-xl bg-[#FEE2E2] text-[#C62828] border border-[#FECACA]/60 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <svg
+              className="w-6 h-6 text-[#C62828]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.75}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          </div>
+        </Link>
       </div>
 
+      {/* Visual Data Charts (Tren Bulanan & Distribusi KU / Posisi) */}
+      <DashboardCharts stats={stats} />
+
       {/* Database Diagnostic Card */}
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm">
-        <h2 className="text-sm font-bold text-[#0f172a] uppercase tracking-wider mb-4 flex items-center gap-2">
+      <div className="bg-white rounded-xl border border-[#e2e8f0] p-5 shadow-xs">
+        <h2 className="text-xs font-bold text-[#0f172a] uppercase tracking-wider mb-3 flex items-center gap-2">
           <svg
-            className="w-4 h-4 text-[#266b56]"
+            className="w-4 h-4 text-[#C62828]"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -131,59 +172,42 @@ function FoundationAndAuthPage() {
               d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7M4 7c0-2 1.5-3 3.5-3h9c2 0 3.5 1 3.5 3M4 7c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3m-16 5c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3"
             />
           </svg>
-          Status Database PostgreSQL & Drizzle ORM
+          Status Database & Server
         </h2>
 
         {dbHealth.connected ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-[#f8fafc] p-4 rounded border border-[#e2e8f0]">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-[#f8fafc] p-3.5 rounded-lg border border-[#e2e8f0]">
             <div>
               <div className="text-[11px] font-medium text-[#64748b]">
-                Status Koneksi
+                Status
               </div>
-              <div className="text-sm font-semibold text-emerald-700 mt-0.5 flex items-center gap-1.5">
+              <div className="text-xs font-semibold text-emerald-700 mt-0.5 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                Terhubung Aktif
+                Connect
               </div>
             </div>
             <div>
               <div className="text-[11px] font-medium text-[#64748b]">
-                Nama Database
+                Database Name
               </div>
-              <div className="text-sm font-semibold text-[#0f172a] mt-0.5">
+              <div className="text-xs font-semibold text-[#0f172a] mt-0.5">
                 {dbHealth.databaseName}
               </div>
             </div>
             <div>
               <div className="text-[11px] font-medium text-[#64748b]">
-                Latensi Response
+                Response Latency
               </div>
-              <div className="text-sm font-semibold text-[#0f172a] mt-0.5 tabular-nums">
+              <div className="text-xs font-semibold text-[#0f172a] mt-0.5 tabular-nums">
                 {dbHealth.latencyMs} ms
               </div>
             </div>
           </div>
         ) : (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-xs text-red-700">
-            Koneksi database terputus. Silakan periksa service PostgreSQL lokal
-            Anda.
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">
+            Database connection is lost. Please check your service
           </div>
         )}
-      </div>
-
-      {/* Next Step Preview */}
-      <div className="bg-[#f1f5f9] border border-[#cbd5e1] rounded-lg p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="text-xs font-bold text-[#0f172a] uppercase tracking-wider">
-            Langkah Berikutnya: F03 Dashboard / F04 Player Management
-          </div>
-          <p className="text-xs text-[#475569] mt-0.5">
-            Fondasi teknis dan autentikasi administrator telah siap. Modul data
-            pemain atau ringkasan statistik siap dikerjakan sesuai roadmap.
-          </p>
-        </div>
-        <div className="text-xs font-medium text-[#475569] bg-white px-3 py-1.5 rounded border border-[#cbd5e1] shrink-0 self-start sm:self-auto">
-          Menunggu Review F02
-        </div>
       </div>
     </div>
   )

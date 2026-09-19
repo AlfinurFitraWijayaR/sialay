@@ -7,6 +7,13 @@ import { getCurrentSession } from '../auth/session'
 import { db } from '../db'
 import type { Player } from '../db/schema'
 import { players } from '../db/schema'
+import { logServerError, sanitizeErrorMessage } from '../security/error-handler'
+import type { ValidatedPlayerInput } from '../security/validation'
+import {
+  sanitizeText,
+  validatePlayerPayload,
+  validateUUID,
+} from '../security/validation'
 import {
   deletePlayerPhoto,
   getPhotoDataUrl,
@@ -36,261 +43,193 @@ export interface PaginatedPlayersResult {
   availableBirthYears: number[]
 }
 
-// Get Players List with Search & Filter (F06)
+// Get Players List
 export const getPlayersFn = createServerFn({ method: 'GET' })
   .validator((opts?: GetPlayersFilter) => {
-    const page = Math.max(1, Number(opts?.page || 1))
-    const pageSize = Math.min(50, Math.max(5, Number(opts?.pageSize || 15)))
+    const page = Math.max(1, Math.floor(Number(opts?.page || 1)))
+    const pageSize = Math.min(
+      50,
+      Math.max(5, Math.floor(Number(opts?.pageSize || 15))),
+    )
     const search =
       typeof opts?.search === 'string' && opts.search.trim() !== ''
-        ? opts.search.trim()
+        ? sanitizeText(opts.search).slice(0, 100)
         : undefined
     const status =
       opts?.status === 'active' || opts?.status === 'inactive'
         ? opts.status
         : undefined
     const birthYear =
-      opts?.birthYear && !isNaN(Number(opts.birthYear)) && Number(opts.birthYear) > 1900
-        ? Number(opts.birthYear)
+      opts?.birthYear &&
+      !isNaN(Number(opts.birthYear)) &&
+      Number(opts.birthYear) > 1900
+        ? Math.floor(Number(opts.birthYear))
         : undefined
 
     return { page, pageSize, search, status, birthYear }
   })
   .handler(async ({ data }): Promise<PaginatedPlayersResult> => {
-    const auth = await getCurrentSession()
-    if (!auth) {
-      throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
-    }
+    try {
+      const auth = await getCurrentSession()
+      if (!auth) {
+        throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
+      }
 
-    const { page, pageSize, search, status, birthYear } = data
-    const offset = (page - 1) * pageSize
+      const { page, pageSize, search, status, birthYear } = data
+      const offset = (page - 1) * pageSize
 
-    const conditions: SQL[] = []
+      const conditions: SQL[] = []
 
-    if (search) {
-      conditions.push(ilike(players.fullName, `%${search}%`))
-    }
+      if (search) {
+        // Parameterized ILIKE query via Drizzle
+        conditions.push(ilike(players.fullName, `%${search}%`))
+      }
 
-    if (status) {
-      conditions.push(eq(players.status, status))
-    }
+      if (status) {
+        conditions.push(eq(players.status, status))
+      }
 
-    if (birthYear) {
-      // PRD Section 6.1 & F06: Calculate KU from date_of_birth, no DB column
-      conditions.push(gte(players.dateOfBirth, `${birthYear}-01-01`))
-      conditions.push(lte(players.dateOfBirth, `${birthYear}-12-31`))
-    }
+      if (birthYear) {
+        conditions.push(gte(players.dateOfBirth, `${birthYear}-01-01`))
+        conditions.push(lte(players.dateOfBirth, `${birthYear}-12-31`))
+      }
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined
 
-    const [totalRows, rows, allDobRows] = await Promise.all([
-      db
-        .select({ val: count() })
-        .from(players)
-        .where(whereClause),
-      db
-        .select()
-        .from(players)
-        .where(whereClause)
-        .orderBy(desc(players.createdAt))
-        .limit(pageSize)
-        .offset(offset),
-      db
-        .selectDistinct({ dateOfBirth: players.dateOfBirth })
-        .from(players),
-    ])
+      const [totalRows, rows, allDobRows] = await Promise.all([
+        db.select({ val: count() }).from(players).where(whereClause),
+        db
+          .select()
+          .from(players)
+          .where(whereClause)
+          .orderBy(desc(players.createdAt))
+          .limit(pageSize)
+          .offset(offset),
+        db.selectDistinct({ dateOfBirth: players.dateOfBirth }).from(players),
+      ])
 
-    const totalCount = totalRows[0]?.val ?? 0
-    const totalPages = Math.ceil(totalCount / pageSize) || 1
+      const totalCount = totalRows[0]?.val ?? 0
+      const totalPages = Math.ceil(totalCount / pageSize) || 1
 
-    const availableBirthYears = Array.from(
-      new Set(
-        allDobRows
-          .map((r) => new Date(r.dateOfBirth).getFullYear())
-          .filter((y) => !isNaN(y) && y > 1900),
-      ),
-    ).sort((a, b) => b - a)
+      const availableBirthYears = Array.from(
+        new Set(
+          allDobRows
+            .map((r) => new Date(r.dateOfBirth).getFullYear())
+            .filter((y) => !isNaN(y) && y > 1900),
+        ),
+      ).sort((a, b) => b - a)
 
-    const listWithDerivedKU: PlayerListItem[] = await Promise.all(
-      rows.map(async (p) => ({
-        ...p,
-        ku: calculateKU(p.dateOfBirth),
-        age: calculateAge(p.dateOfBirth),
-        photoDataUrl: p.profilePhotoKey
-          ? await getPhotoDataUrl(p.profilePhotoKey)
-          : null,
-      })),
-    )
+      const listWithDerivedKU: PlayerListItem[] = await Promise.all(
+        rows.map(async (p) => ({
+          ...p,
+          ku: calculateKU(p.dateOfBirth),
+          age: calculateAge(p.dateOfBirth),
+          photoDataUrl: p.profilePhotoKey
+            ? await getPhotoDataUrl(p.profilePhotoKey)
+            : null,
+        })),
+      )
 
-    return {
-      players: listWithDerivedKU,
-      totalCount,
-      page,
-      pageSize,
-      totalPages,
-      availableBirthYears,
+      return {
+        players: listWithDerivedKU,
+        totalCount,
+        page,
+        pageSize,
+        totalPages,
+        availableBirthYears,
+      }
+    } catch (err: unknown) {
+      logServerError('getPlayersFn', err)
+      throw new Error(sanitizeErrorMessage(err, 'Gagal memuat data pemain.'))
     }
   })
 
 // Get Single Player Detail by ID
 export const getPlayerDetailFn = createServerFn({ method: 'GET' })
   .validator((opts: { id: string }) => {
-    if (!opts.id) {
-      throw new Error('ID Pemain tidak valid')
-    }
-    return { id: opts.id.trim() }
+    return { id: validateUUID(opts.id, 'ID Pemain') }
   })
   .handler(async ({ data }): Promise<PlayerListItem | null> => {
-    const auth = await getCurrentSession()
-    if (!auth) {
-      throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
-    }
+    try {
+      const auth = await getCurrentSession()
+      if (!auth) {
+        throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
+      }
 
-    const results = await db
-      .select()
-      .from(players)
-      .where(eq(players.id, data.id))
-      .limit(1)
+      const results = await db
+        .select()
+        .from(players)
+        .where(eq(players.id, data.id))
+        .limit(1)
 
-    if (results.length === 0) {
-      return null
-    }
+      if (results.length === 0) {
+        return null
+      }
 
-    const player = results[0]
-    const photoDataUrl = player.profilePhotoKey
-      ? await getPhotoDataUrl(player.profilePhotoKey)
-      : null
+      const player = results[0]
+      const photoDataUrl = player.profilePhotoKey
+        ? await getPhotoDataUrl(player.profilePhotoKey)
+        : null
 
-    return {
-      ...player,
-      ku: calculateKU(player.dateOfBirth),
-      age: calculateAge(player.dateOfBirth),
-      photoDataUrl,
+      return {
+        ...player,
+        ku: calculateKU(player.dateOfBirth),
+        age: calculateAge(player.dateOfBirth),
+        photoDataUrl,
+      }
+    } catch (err: unknown) {
+      logServerError('getPlayerDetailFn', err)
+      throw new Error(sanitizeErrorMessage(err, 'Gagal memuat detail pemain.'))
     }
   })
 
-export interface CreatePlayerInput {
-  fullName: string
-  placeOfBirth: string
-  dateOfBirth: string
-  address: string
-  playingPosition: string
-  parentName?: string
-  parentPhone?: string
-  joinDate?: string
-  status?: string
-  photoBase64?: string
-}
-
-// Create players
+// Create Player
 export const createPlayerFn = createServerFn({ method: 'POST' })
-  .validator((data: unknown): CreatePlayerInput => {
-    if (!data || typeof data !== 'object') {
-      throw new Error('Data pemain tidak valid')
-    }
-    const d = data as Record<string, unknown>
-
-    if (
-      !d.fullName ||
-      typeof d.fullName !== 'string' ||
-      d.fullName.trim() === ''
-    ) {
-      throw new Error('Nama lengkap wajib diisi')
-    }
-    if (
-      !d.placeOfBirth ||
-      typeof d.placeOfBirth !== 'string' ||
-      d.placeOfBirth.trim() === ''
-    ) {
-      throw new Error('Tempat lahir wajib diisi')
-    }
-    if (!d.dateOfBirth || typeof d.dateOfBirth !== 'string') {
-      throw new Error('Tanggal lahir wajib diisi')
-    }
-    const parsedDate = new Date(d.dateOfBirth)
-    if (isNaN(parsedDate.getTime())) {
-      throw new Error('Format tanggal lahir tidak valid')
-    }
-    if (
-      !d.address ||
-      typeof d.address !== 'string' ||
-      d.address.trim() === ''
-    ) {
-      throw new Error('Alamat wajib diisi')
-    }
-    if (!d.playingPosition || typeof d.playingPosition !== 'string') {
-      throw new Error('Posisi bermain wajib dipilih')
-    }
-
-    return {
-      fullName: d.fullName.trim(),
-      placeOfBirth: d.placeOfBirth.trim(),
-      dateOfBirth: d.dateOfBirth.trim(),
-      address: d.address.trim(),
-      playingPosition: d.playingPosition.trim(),
-      parentName:
-        typeof d.parentName === 'string' && d.parentName.trim() !== ''
-          ? d.parentName.trim()
-          : undefined,
-      parentPhone:
-        typeof d.parentPhone === 'string' && d.parentPhone.trim() !== ''
-          ? d.parentPhone.trim()
-          : undefined,
-      joinDate:
-        typeof d.joinDate === 'string' && d.joinDate.trim() !== ''
-          ? d.joinDate.trim()
-          : undefined,
-      status: d.status === 'inactive' ? 'inactive' : 'active',
-      photoBase64:
-        typeof d.photoBase64 === 'string' && d.photoBase64.trim() !== ''
-          ? d.photoBase64.trim()
-          : undefined,
-    }
+  .validator((data: unknown): ValidatedPlayerInput => {
+    return validatePlayerPayload(data)
   })
   .handler(async ({ data }) => {
-    const auth = await getCurrentSession()
-    if (!auth) {
-      throw new Error('Akses tidak diizinkan.')
+    try {
+      const auth = await getCurrentSession()
+      if (!auth) {
+        throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
+      }
+
+      const newId = crypto.randomUUID()
+      let savedPhotoKey: string | null = null
+
+      if (data.photoBase64) {
+        const base64Data = data.photoBase64.replace(/^data:[^;]+;base64,/, '')
+        const buffer = Buffer.from(base64Data, 'base64')
+        const { key } = await savePlayerPhoto(buffer)
+        savedPhotoKey = key
+      }
+
+      await db.insert(players).values({
+        id: newId,
+        fullName: data.fullName,
+        placeOfBirth: data.placeOfBirth,
+        dateOfBirth: data.dateOfBirth,
+        address: data.address,
+        playingPosition: data.playingPosition,
+        parentName: data.parentName || null,
+        parentPhone: data.parentPhone || null,
+        joinDate: data.joinDate || null,
+        status: data.status,
+        profilePhotoKey: savedPhotoKey,
+      })
+
+      return { success: true, id: newId }
+    } catch (err: unknown) {
+      logServerError('createPlayerFn', err)
+      throw new Error(
+        sanitizeErrorMessage(err, 'Gagal menyimpan data pemain baru.'),
+      )
     }
-
-    const newId = crypto.randomUUID()
-    let savedPhotoKey: string | null = null
-
-    if (data.photoBase64) {
-      const base64Data = data.photoBase64.replace(/^data:[^;]+;base64,/, '')
-      const buffer = Buffer.from(base64Data, 'base64')
-      const { key } = await savePlayerPhoto(buffer)
-      savedPhotoKey = key
-    }
-
-    await db.insert(players).values({
-      id: newId,
-      fullName: data.fullName,
-      placeOfBirth: data.placeOfBirth,
-      dateOfBirth: data.dateOfBirth,
-      address: data.address,
-      playingPosition: data.playingPosition,
-      parentName: data.parentName || null,
-      parentPhone: data.parentPhone || null,
-      joinDate: data.joinDate || null,
-      status: data.status || 'active',
-      profilePhotoKey: savedPhotoKey,
-    })
-
-    return { success: true, id: newId }
   })
 
-export interface UpdatePlayerInput {
+export interface UpdatePlayerInput extends ValidatedPlayerInput {
   id: string
-  fullName: string
-  placeOfBirth: string
-  dateOfBirth: string
-  address: string
-  playingPosition: string
-  parentName?: string
-  parentPhone?: string
-  joinDate?: string
-  status?: string
 }
 
 // Update Player
@@ -300,255 +239,235 @@ export const updatePlayerFn = createServerFn({ method: 'POST' })
       throw new Error('Data tidak valid')
     }
     const d = data as Record<string, unknown>
-    if (!d.id || typeof d.id !== 'string') {
-      throw new Error('ID Pemain wajib disertakan')
-    }
-    if (
-      !d.fullName ||
-      typeof d.fullName !== 'string' ||
-      d.fullName.trim() === ''
-    ) {
-      throw new Error('Nama lengkap wajib diisi')
-    }
-    if (
-      !d.placeOfBirth ||
-      typeof d.placeOfBirth !== 'string' ||
-      d.placeOfBirth.trim() === ''
-    ) {
-      throw new Error('Tempat lahir wajib diisi')
-    }
-    if (!d.dateOfBirth || typeof d.dateOfBirth !== 'string') {
-      throw new Error('Tanggal lahir wajib diisi')
-    }
-    if (
-      !d.address ||
-      typeof d.address !== 'string' ||
-      d.address.trim() === ''
-    ) {
-      throw new Error('Alamat wajib diisi')
-    }
-    if (!d.playingPosition || typeof d.playingPosition !== 'string') {
-      throw new Error('Posisi bermain wajib dipilih')
-    }
-
-    return {
-      id: d.id.trim(),
-      fullName: d.fullName.trim(),
-      placeOfBirth: d.placeOfBirth.trim(),
-      dateOfBirth: d.dateOfBirth.trim(),
-      address: d.address.trim(),
-      playingPosition: d.playingPosition.trim(),
-      parentName:
-        typeof d.parentName === 'string' && d.parentName.trim() !== ''
-          ? d.parentName.trim()
-          : undefined,
-      parentPhone:
-        typeof d.parentPhone === 'string' && d.parentPhone.trim() !== ''
-          ? d.parentPhone.trim()
-          : undefined,
-      joinDate:
-        typeof d.joinDate === 'string' && d.joinDate.trim() !== ''
-          ? d.joinDate.trim()
-          : undefined,
-      status: d.status === 'inactive' ? 'inactive' : 'active',
-    }
+    const id = validateUUID(d.id, 'ID Pemain')
+    const validated = validatePlayerPayload(data)
+    return { ...validated, id }
   })
   .handler(async ({ data }) => {
-    const auth = await getCurrentSession()
-    if (!auth) {
-      throw new Error('Akses tidak diizinkan.')
+    try {
+      const auth = await getCurrentSession()
+      if (!auth) {
+        throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
+      }
+
+      await db
+        .update(players)
+        .set({
+          fullName: data.fullName,
+          placeOfBirth: data.placeOfBirth,
+          dateOfBirth: data.dateOfBirth,
+          address: data.address,
+          playingPosition: data.playingPosition,
+          parentName: data.parentName || null,
+          parentPhone: data.parentPhone || null,
+          joinDate: data.joinDate || null,
+          status: data.status,
+          updatedAt: new Date(),
+        })
+        .where(eq(players.id, data.id))
+
+      return { success: true }
+    } catch (err: unknown) {
+      logServerError('updatePlayerFn', err)
+      throw new Error(
+        sanitizeErrorMessage(err, 'Gagal memperbarui data pemain.'),
+      )
     }
-
-    await db
-      .update(players)
-      .set({
-        fullName: data.fullName,
-        placeOfBirth: data.placeOfBirth,
-        dateOfBirth: data.dateOfBirth,
-        address: data.address,
-        playingPosition: data.playingPosition,
-        parentName: data.parentName || null,
-        parentPhone: data.parentPhone || null,
-        joinDate: data.joinDate || null,
-        status: data.status || 'active',
-        updatedAt: new Date(),
-      })
-      .where(eq(players.id, data.id))
-
-    return { success: true }
   })
 
 // Update Status Pemain
 export const updatePlayerStatusFn = createServerFn({ method: 'POST' })
   .validator((opts: { id: string; status: 'active' | 'inactive' }) => {
-    if (!opts.id) {
-      throw new Error('Parameter status tidak valid')
-    }
-    return opts
+    const id = validateUUID(opts.id, 'ID Pemain')
+    const status: 'active' | 'inactive' =
+      opts.status === 'inactive' ? 'inactive' : 'active'
+    return { id, status }
   })
   .handler(async ({ data }) => {
-    const auth = await getCurrentSession()
-    if (!auth) {
-      throw new Error('Akses tidak diizinkan.')
+    try {
+      const auth = await getCurrentSession()
+      if (!auth) {
+        throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
+      }
+
+      await db
+        .update(players)
+        .set({
+          status: data.status,
+          updatedAt: new Date(),
+        })
+        .where(eq(players.id, data.id))
+
+      return { success: true }
+    } catch (err: unknown) {
+      logServerError('updatePlayerStatusFn', err)
+      throw new Error(
+        sanitizeErrorMessage(err, 'Gagal memperbarui status pemain.'),
+      )
     }
-
-    await db
-      .update(players)
-      .set({
-        status: data.status,
-        updatedAt: new Date(),
-      })
-      .where(eq(players.id, data.id))
-
-    return { success: true }
   })
 
-// Delete Players
+// Delete Player
 export const deletePlayerFn = createServerFn({ method: 'POST' })
   .validator((opts: { id: string }) => {
-    if (!opts.id) {
-      throw new Error('ID Pemain tidak valid')
-    }
-    return { id: opts.id.trim() }
+    return { id: validateUUID(opts.id, 'ID Pemain') }
   })
   .handler(async ({ data }) => {
-    const auth = await getCurrentSession()
-    if (!auth) {
-      throw new Error('Akses tidak diizinkan.')
+    try {
+      const auth = await getCurrentSession()
+      if (!auth) {
+        throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
+      }
+
+      const rows = await db
+        .select({ profilePhotoKey: players.profilePhotoKey })
+        .from(players)
+        .where(eq(players.id, data.id))
+        .limit(1)
+
+      if (rows.length > 0 && rows[0].profilePhotoKey) {
+        await deletePlayerPhoto(rows[0].profilePhotoKey)
+      }
+
+      await db.delete(players).where(eq(players.id, data.id))
+      return { success: true }
+    } catch (err: unknown) {
+      logServerError('deletePlayerFn', err)
+      throw new Error(sanitizeErrorMessage(err, 'Gagal menghapus data pemain.'))
     }
-
-    const rows = await db
-      .select({ profilePhotoKey: players.profilePhotoKey })
-      .from(players)
-      .where(eq(players.id, data.id))
-      .limit(1)
-
-    if (rows.length > 0 && rows[0].profilePhotoKey) {
-      await deletePlayerPhoto(rows[0].profilePhotoKey)
-    }
-
-    await db.delete(players).where(eq(players.id, data.id))
-    return { success: true }
   })
 
 // Upload atau Replace PP
 export const uploadPlayerPhotoFn = createServerFn({ method: 'POST' })
   .validator(
     (opts: { playerId: string; fileBase64: string; fileName?: string }) => {
-      if (!opts.playerId || typeof opts.playerId !== 'string') {
-        throw new Error('ID Pemain wajib disertakan.')
-      }
+      const playerId = validateUUID(opts.playerId, 'ID Pemain')
       if (!opts.fileBase64 || typeof opts.fileBase64 !== 'string') {
         throw new Error('Data foto wajib disertakan.')
       }
-      return opts
+      if (!opts.fileBase64.startsWith('data:image/')) {
+        throw new Error('Format berkas gambar tidak valid.')
+      }
+      return { playerId, fileBase64: opts.fileBase64 }
     },
   )
   .handler(async ({ data }) => {
-    const auth = await getCurrentSession()
-    if (!auth) {
-      throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
+    try {
+      const auth = await getCurrentSession()
+      if (!auth) {
+        throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
+      }
+
+      const rows = await db
+        .select()
+        .from(players)
+        .where(eq(players.id, data.playerId))
+        .limit(1)
+
+      if (rows.length === 0) {
+        throw new Error('Data pemain tidak ditemukan.')
+      }
+
+      const existingPlayer = rows[0]
+      const base64Data = data.fileBase64.replace(/^data:[^;]+;base64,/, '')
+      const buffer = Buffer.from(base64Data, 'base64')
+
+      // Validasi ukuran berkas, magic bytes, dan kompresi WebP
+      const { key } = await savePlayerPhoto(buffer)
+
+      // Hapus berkas foto lama jika ada
+      if (existingPlayer.profilePhotoKey) {
+        await deletePlayerPhoto(existingPlayer.profilePhotoKey)
+      }
+
+      await db
+        .update(players)
+        .set({
+          profilePhotoKey: key,
+          updatedAt: new Date(),
+        })
+        .where(eq(players.id, data.playerId))
+
+      const photoDataUrl = await getPhotoDataUrl(key)
+      return { success: true, key, photoDataUrl }
+    } catch (err: unknown) {
+      logServerError('uploadPlayerPhotoFn', err)
+      throw new Error(
+        sanitizeErrorMessage(err, 'Gagal mengunggah foto profil pemain.'),
+      )
     }
-
-    const rows = await db
-      .select()
-      .from(players)
-      .where(eq(players.id, data.playerId))
-      .limit(1)
-
-    if (rows.length === 0) {
-      throw new Error('Data pemain tidak ditemukan.')
-    }
-
-    const existingPlayer = rows[0]
-    const base64Data = data.fileBase64.replace(/^data:[^;]+;base64,/, '')
-    const buffer = Buffer.from(base64Data, 'base64')
-
-    // Save new photo to private storage (validates size & magic bytes)
-    const { key } = await savePlayerPhoto(buffer)
-
-    // Delete old photo file if replacing
-    if (existingPlayer.profilePhotoKey) {
-      await deletePlayerPhoto(existingPlayer.profilePhotoKey)
-    }
-
-    // Update database
-    await db
-      .update(players)
-      .set({
-        profilePhotoKey: key,
-        updatedAt: new Date(),
-      })
-      .where(eq(players.id, data.playerId))
-
-    const photoDataUrl = await getPhotoDataUrl(key)
-    return { success: true, key, photoDataUrl }
   })
 
 // Remove Player Profile Photo
 export const deletePlayerPhotoFn = createServerFn({ method: 'POST' })
   .validator((opts: { playerId: string }) => {
-    if (!opts.playerId || typeof opts.playerId !== 'string') {
-      throw new Error('ID Pemain wajib disertakan.')
-    }
-    return opts
+    return { playerId: validateUUID(opts.playerId, 'ID Pemain') }
   })
   .handler(async ({ data }) => {
-    const auth = await getCurrentSession()
-    if (!auth) {
-      throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
+    try {
+      const auth = await getCurrentSession()
+      if (!auth) {
+        throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
+      }
+
+      const rows = await db
+        .select()
+        .from(players)
+        .where(eq(players.id, data.playerId))
+        .limit(1)
+
+      if (rows.length === 0) {
+        throw new Error('Data pemain tidak ditemukan.')
+      }
+
+      const existingPlayer = rows[0]
+      if (existingPlayer.profilePhotoKey) {
+        await deletePlayerPhoto(existingPlayer.profilePhotoKey)
+      }
+
+      await db
+        .update(players)
+        .set({
+          profilePhotoKey: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(players.id, data.playerId))
+
+      return { success: true }
+    } catch (err: unknown) {
+      logServerError('deletePlayerPhotoFn', err)
+      throw new Error(
+        sanitizeErrorMessage(err, 'Gagal menghapus foto profil pemain.'),
+      )
     }
-
-    const rows = await db
-      .select()
-      .from(players)
-      .where(eq(players.id, data.playerId))
-      .limit(1)
-
-    if (rows.length === 0) {
-      throw new Error('Data pemain tidak ditemukan.')
-    }
-
-    const existingPlayer = rows[0]
-    if (existingPlayer.profilePhotoKey) {
-      await deletePlayerPhoto(existingPlayer.profilePhotoKey)
-    }
-
-    await db
-      .update(players)
-      .set({
-        profilePhotoKey: null,
-        updatedAt: new Date(),
-      })
-      .where(eq(players.id, data.playerId))
-
-    return { success: true }
   })
 
 // Get Protected Player Profile Photo
 export const getPlayerPhotoFn = createServerFn({ method: 'GET' })
   .validator((opts: { playerId: string }) => {
-    if (!opts.playerId || typeof opts.playerId !== 'string') {
-      throw new Error('ID Pemain tidak valid.')
-    }
-    return opts
+    return { playerId: validateUUID(opts.playerId, 'ID Pemain') }
   })
   .handler(async ({ data }) => {
-    const auth = await getCurrentSession()
-    if (!auth) {
-      throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
-    }
+    try {
+      const auth = await getCurrentSession()
+      if (!auth) {
+        throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
+      }
 
-    const rows = await db
-      .select({ profilePhotoKey: players.profilePhotoKey })
-      .from(players)
-      .where(eq(players.id, data.playerId))
-      .limit(1)
+      const rows = await db
+        .select({ profilePhotoKey: players.profilePhotoKey })
+        .from(players)
+        .where(eq(players.id, data.playerId))
+        .limit(1)
 
-    if (rows.length === 0 || !rows[0].profilePhotoKey) {
+      if (rows.length === 0 || !rows[0].profilePhotoKey) {
+        return { photoDataUrl: null }
+      }
+
+      const photoDataUrl = await getPhotoDataUrl(rows[0].profilePhotoKey)
+      return { photoDataUrl }
+    } catch (err: unknown) {
+      logServerError('getPlayerPhotoFn', err)
       return { photoDataUrl: null }
     }
-
-    const photoDataUrl = await getPhotoDataUrl(rows[0].profilePhotoKey)
-    return { photoDataUrl }
   })
