@@ -88,7 +88,8 @@ function CoachListPage() {
             Daftar Pelatih
           </h1>
           <p className="text-xs text-[#475569] mt-0.5">
-            Pengelolaan biodata pelatih, kontak resmi, alamat, dan status keaktifan di klub.
+            Pengelolaan biodata pelatih, kontak resmi, alamat, dan status
+            keaktifan di klub.
           </p>
         </div>
 
@@ -139,7 +140,8 @@ function CoachListPage() {
               Belum Ada Data Pelatih
             </h3>
             <p className="text-xs text-[#64748b] max-w-sm mx-auto mb-5 leading-relaxed">
-              Database pelatih saat ini masih kosong. Daftarkan pelatih pertama klub untuk memulai pencatatan manajemen tim kepelatihan.
+              Database pelatih saat ini masih kosong. Daftarkan pelatih pertama
+              klub untuk memulai pencatatan manajemen tim kepelatihan.
             </p>
             <Link
               to="/coaches/create"
@@ -220,7 +222,7 @@ function CoachListPage() {
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <div className="w-full h-full bg-[#C62828] text-white flex items-center justify-center font-bold text-[11px]">
+                                <div className="w-full h-full bg-[#972828] text-white flex items-center justify-center font-bold text-[11px]">
                                   {coach.fullName.slice(0, 2).toUpperCase()}
                                 </div>
                               )}
@@ -229,12 +231,15 @@ function CoachListPage() {
                               <Link
                                 to="/coaches/$coachId"
                                 params={{ coachId: coach.id }}
-                                className="font-semibold text-[#0f172a] hover:text-[#C62828] hover:underline block truncate"
+                                className="font-semibold text-[#0f172a] hover:text-[#972828] hover:underline block truncate"
                               >
                                 {coach.fullName}
                               </Link>
                               <div className="text-[11px] text-[#64748b] truncate max-w-xs">
-                                ID: <span className="font-mono">{coach.id.slice(0, 8)}</span>
+                                ID:{' '}
+                                <span className="font-mono">
+                                  {coach.id.slice(0, 8)}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -242,7 +247,7 @@ function CoachListPage() {
                         <td className="py-3 px-4 text-[#334155] tabular-nums">
                           <a
                             href={`tel:${coach.phone}`}
-                            className="hover:underline text-[#0f172a] hover:text-[#C62828] font-medium"
+                            className="hover:underline text-[#0f172a] hover:text-[#972828] font-medium"
                           >
                             {coach.phone}
                           </a>
@@ -270,7 +275,9 @@ function CoachListPage() {
                               }`}
                             />
                             <span>
-                              {coach.status === 'active' ? 'Aktif' : 'Non-Aktif'}
+                              {coach.status === 'active'
+                                ? 'Aktif'
+                                : 'Non-Aktif'}
                             </span>
                           </button>
                         </td>
@@ -293,7 +300,7 @@ function CoachListPage() {
                             <button
                               type="button"
                               onClick={() => setCoachToDelete(coach)}
-                              className="px-2 py-1 text-xs font-medium text-[#C62828] hover:bg-[#FEF2F2] rounded border border-[#FECACA] transition cursor-pointer"
+                              className="px-2 py-1 text-xs font-medium text-[#972828] hover:bg-[#FEF2F2] rounded border border-[#FECACA] transition cursor-pointer"
                             >
                               Hapus
                             </button>
@@ -354,7 +361,7 @@ function CoachListPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl border border-[#cbd5e1] shadow-xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#C62828] flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#972828] flex items-center justify-center shrink-0">
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -377,7 +384,8 @@ function CoachListPage() {
                   Apakah Anda yakin ingin menghapus data pelatih{' '}
                   <strong className="text-[#0f172a] font-semibold">
                     {coachToDelete.fullName}
-                  </strong>? Tindakan ini tidak dapat dibatalkan.
+                  </strong>
+                  ? Tindakan ini tidak dapat dibatalkan.
                 </p>
               </div>
             </div>
@@ -395,7 +403,7 @@ function CoachListPage() {
                 type="button"
                 disabled={isDeleting}
                 onClick={handleConfirmDelete}
-                className="px-4 py-2 text-xs font-semibold text-white bg-[#C62828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-white bg-[#972828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
               >
                 {isDeleting ? 'Menghapus...' : 'Ya, Hapus Pelatih'}
               </button>

@@ -112,22 +112,13 @@ export function validateDateString(
 
 // Posisi bermain resmi yang diperbolehkan
 export const ALLOWED_PLAYING_POSITIONS = [
-  'Penjaga Gawang',
-  'Kiper',
-  'Pemain Bertahan',
-  'Belakang',
+  'Keeper',
   'Bek',
-  'Bek Tengah',
-  'Bek Sayap',
-  'Tengah',
   'Gelandang',
-  'Gelandang Bertahan',
-  'Gelandang Serang',
-  'Depan',
   'Penyerang',
-  'Striker',
-  'Sayap',
 ] as const
+
+export type DocStatus = 'ada' | 'belum_ada'
 
 export interface ValidatedPlayerInput {
   fullName: string
@@ -140,6 +131,13 @@ export interface ValidatedPlayerInput {
   joinDate?: string
   status: 'active' | 'inactive'
   photoBase64?: string
+  administration?: {
+    registrationForm: DocStatus
+    familyCard: DocStatus
+    birthCertificate: DocStatus
+    pasPhoto: DocStatus
+    notes?: string
+  }
 }
 
 export function validatePlayerPayload(raw: unknown): ValidatedPlayerInput {
@@ -255,6 +253,31 @@ export function validatePlayerPayload(raw: unknown): ValidatedPlayerInput {
     photoBase64 = rawPhoto
   }
 
+  // 11. Berkas Administrasi (opsional saat pendaftaran)
+  let administration: ValidatedPlayerInput['administration']
+  if (d.administration && typeof d.administration === 'object') {
+    const admin = d.administration as Record<string, unknown>
+    const parseDoc = (val: unknown): DocStatus =>
+      val === 'ada' ? 'ada' : 'belum_ada'
+
+    const registrationForm = parseDoc(admin.registrationForm)
+    const familyCard = parseDoc(admin.familyCard)
+    const birthCertificate = parseDoc(admin.birthCertificate)
+    const pasPhoto = parseDoc(admin.pasPhoto)
+    const notes =
+      typeof admin.notes === 'string'
+        ? sanitizeText(admin.notes).slice(0, 500)
+        : undefined
+
+    administration = {
+      registrationForm,
+      familyCard,
+      birthCertificate,
+      pasPhoto,
+      notes: notes && notes.length > 0 ? notes : undefined,
+    }
+  }
+
   return {
     fullName,
     placeOfBirth,
@@ -266,6 +289,7 @@ export function validatePlayerPayload(raw: unknown): ValidatedPlayerInput {
     joinDate,
     status,
     photoBase64,
+    administration,
   }
 }
 

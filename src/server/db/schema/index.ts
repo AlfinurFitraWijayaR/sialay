@@ -10,4 +10,5 @@
 export * from './auth'
 export * from './players'
 export * from './coaches'
-export const schemaVersion = '1.3.0'
+export * from './administrations'
+export const schemaVersion = '1.4.0'

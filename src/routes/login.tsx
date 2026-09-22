@@ -73,10 +73,10 @@ function LoginPage() {
           {error && (
             <div
               role="alert"
-              className="mb-6 p-3 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#C62828] text-xs flex items-start gap-2"
+              className="mb-6 p-3 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#972828] text-xs flex items-start gap-2"
             >
               <svg
-                className="w-4 h-4 text-[#C62828] shrink-0 mt-0.5"
+                className="w-4 h-4 text-[#972828] shrink-0 mt-0.5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"

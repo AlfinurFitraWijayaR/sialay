@@ -120,7 +120,7 @@ function CreateCoachPage() {
         <div className="mb-2">
           <Link
             to="/coaches"
-            className="text-xs font-semibold text-[#0f172a] hover:text-[#C62828] hover:underline"
+            className="text-xs font-semibold text-[#0f172a] hover:text-[#972828] hover:underline"
           >
             ← Kembali ke Daftar Pelatih
           </Link>
@@ -129,7 +129,8 @@ function CreateCoachPage() {
           Tambah Pelatih Baru
         </h1>
         <p className="text-xs text-[#475569] mt-0.5">
-          Lengkapi formulir biodata pelatih SSB Mundinglaya berikut secara akurat.
+          Lengkapi formulir biodata pelatih SSB Mundinglaya berikut secara
+          akurat.
         </p>
       </div>
 
@@ -191,17 +192,18 @@ function CreateCoachPage() {
                     <button
                       type="button"
                       onClick={handleRemovePhoto}
-                      className="px-3 py-1.5 text-xs font-medium text-[#C62828] hover:bg-[#FEF2F2] border border-[#FECACA] rounded-lg transition cursor-pointer"
+                      className="px-3 py-1.5 text-xs font-medium text-[#972828] hover:bg-[#FEF2F2] border border-[#FECACA] rounded-lg transition cursor-pointer"
                     >
                       Hapus Pilihan
                     </button>
                   )}
                 </div>
                 <p className="text-[11px] text-[#64748b]">
-                  Format JPEG, PNG, atau WebP. Maksimal 2MB. Foto akan otomatis dikompresi ke format WebP di server.
+                  Format JPEG, PNG, atau WebP. Maksimal 2MB. Foto akan otomatis
+                  dikompresi ke format WebP di server.
                 </p>
                 {photoError && (
-                  <p className="text-[11px] text-[#C62828] font-medium">
+                  <p className="text-[11px] text-[#972828] font-medium">
                     {photoError}
                   </p>
                 )}
@@ -216,7 +218,7 @@ function CreateCoachPage() {
                 htmlFor="fullName"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Nama Lengkap Pelatih <span className="text-[#C62828]">*</span>
+                Nama Lengkap Pelatih <span className="text-[#972828]">*</span>
               </label>
               <input
                 id="fullName"
@@ -234,7 +236,8 @@ function CreateCoachPage() {
                 htmlFor="phone"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Nomor Telepon / WhatsApp <span className="text-[#C62828]">*</span>
+                Nomor Telepon / WhatsApp{' '}
+                <span className="text-[#972828]">*</span>
               </label>
               <input
                 id="phone"
@@ -252,7 +255,7 @@ function CreateCoachPage() {
                 htmlFor="status"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Status Keaktifan <span className="text-[#C62828]">*</span>
+                Status Keaktifan <span className="text-[#972828]">*</span>
               </label>
               <select
                 id="status"
@@ -272,7 +275,7 @@ function CreateCoachPage() {
                 htmlFor="address"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Alamat Tinggal <span className="text-[#C62828]">*</span>
+                Alamat Tinggal <span className="text-[#972828]">*</span>
               </label>
               <textarea
                 id="address"
@@ -290,10 +293,10 @@ function CreateCoachPage() {
         {error && (
           <div
             role="alert"
-            className="p-4 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#C62828] text-xs flex items-start gap-2.5"
+            className="p-4 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#972828] text-xs flex items-start gap-2.5"
           >
             <svg
-              className="w-4 h-4 text-[#C62828] shrink-0 mt-0.5"
+              className="w-4 h-4 text-[#972828] shrink-0 mt-0.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"

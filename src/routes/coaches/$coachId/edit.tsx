@@ -90,7 +90,9 @@ function EditCoachPage() {
           await router.invalidate()
         } catch (err) {
           setPhotoError(
-            err instanceof Error ? err.message : 'Gagal memperbarui foto profil.',
+            err instanceof Error
+              ? err.message
+              : 'Gagal memperbarui foto profil.',
           )
         } finally {
           setIsUploadingPhoto(false)
@@ -174,7 +176,7 @@ function EditCoachPage() {
           <Link
             to="/coaches/$coachId"
             params={{ coachId: coach.id }}
-            className="text-xs font-semibold text-[#0f172a] hover:text-[#C62828] hover:underline"
+            className="text-xs font-semibold text-[#0f172a] hover:text-[#972828] hover:underline"
           >
             ← Kembali ke Detail Pelatih
           </Link>
@@ -183,7 +185,8 @@ function EditCoachPage() {
           Edit Biodata Pelatih
         </h1>
         <p className="text-xs text-[#475569] mt-0.5">
-          Perbarui data pelatih <strong className="text-[#0f172a]">{coach.fullName}</strong>.
+          Perbarui data pelatih{' '}
+          <strong className="text-[#0f172a]">{coach.fullName}</strong>.
         </p>
       </div>
 
@@ -204,7 +207,7 @@ function EditCoachPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-[#C62828] text-white flex items-center justify-center font-bold text-lg">
+                  <div className="w-full h-full bg-[#972828] text-white flex items-center justify-center font-bold text-lg">
                     {coach.fullName.slice(0, 2).toUpperCase()}
                   </div>
                 )}
@@ -238,7 +241,7 @@ function EditCoachPage() {
                       type="button"
                       disabled={isUploadingPhoto}
                       onClick={() => setShowDeletePhotoModal(true)}
-                      className="px-3 py-1.5 text-xs font-medium text-[#C62828] hover:bg-[#FEF2F2] border border-[#FECACA] rounded-lg transition disabled:opacity-50 cursor-pointer"
+                      className="px-3 py-1.5 text-xs font-medium text-[#972828] hover:bg-[#FEF2F2] border border-[#FECACA] rounded-lg transition disabled:opacity-50 cursor-pointer"
                     >
                       Hapus Foto
                     </button>
@@ -248,7 +251,7 @@ function EditCoachPage() {
                   Format JPEG, PNG, atau WebP. Maksimal 2MB.
                 </p>
                 {photoError && (
-                  <p className="text-[11px] text-[#C62828] font-medium">
+                  <p className="text-[11px] text-[#972828] font-medium">
                     {photoError}
                   </p>
                 )}
@@ -263,7 +266,7 @@ function EditCoachPage() {
                 htmlFor="fullName"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Nama Lengkap Pelatih <span className="text-[#C62828]">*</span>
+                Nama Lengkap Pelatih <span className="text-[#972828]">*</span>
               </label>
               <input
                 id="fullName"
@@ -280,7 +283,8 @@ function EditCoachPage() {
                 htmlFor="phone"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Nomor Telepon / WhatsApp <span className="text-[#C62828]">*</span>
+                Nomor Telepon / WhatsApp{' '}
+                <span className="text-[#972828]">*</span>
               </label>
               <input
                 id="phone"
@@ -297,7 +301,7 @@ function EditCoachPage() {
                 htmlFor="status"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Status Keaktifan <span className="text-[#C62828]">*</span>
+                Status Keaktifan <span className="text-[#972828]">*</span>
               </label>
               <select
                 id="status"
@@ -317,7 +321,7 @@ function EditCoachPage() {
                 htmlFor="address"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Alamat Tinggal <span className="text-[#C62828]">*</span>
+                Alamat Tinggal <span className="text-[#972828]">*</span>
               </label>
               <textarea
                 id="address"
@@ -334,10 +338,10 @@ function EditCoachPage() {
         {error && (
           <div
             role="alert"
-            className="p-4 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#C62828] text-xs flex items-start gap-2.5"
+            className="p-4 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#972828] text-xs flex items-start gap-2.5"
           >
             <svg
-              className="w-4 h-4 text-[#C62828] shrink-0 mt-0.5"
+              className="w-4 h-4 text-[#972828] shrink-0 mt-0.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -377,7 +381,7 @@ function EditCoachPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl border border-[#cbd5e1] shadow-xl max-w-sm w-full p-6 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#C62828] flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#972828] flex items-center justify-center shrink-0">
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -397,7 +401,8 @@ function EditCoachPage() {
                   Hapus Foto Profil?
                 </h3>
                 <p className="text-xs text-[#64748b] mt-1">
-                  Foto profil pelatih ini akan dihapus. Anda dapat mengunggah foto baru kapan saja.
+                  Foto profil pelatih ini akan dihapus. Anda dapat mengunggah
+                  foto baru kapan saja.
                 </p>
               </div>
             </div>
@@ -415,7 +420,7 @@ function EditCoachPage() {
                 type="button"
                 disabled={isDeletingPhoto}
                 onClick={handleDeletePhoto}
-                className="px-4 py-1.5 text-xs font-semibold text-white bg-[#C62828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
+                className="px-4 py-1.5 text-xs font-semibold text-white bg-[#972828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
               >
                 {isDeletingPhoto ? 'Menghapus...' : 'Ya, Hapus'}
               </button>

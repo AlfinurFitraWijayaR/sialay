@@ -1,9 +1,5 @@
-/**
- * Player Domain Utilities — SSB MUNDINGLAYA (SIASMUN)
- */
-
 export const PLAYING_POSITIONS = [
-  'Penjaga Gawang',
+  'Keeper',
   'Bek',
   'Gelandang',
   'Penyerang',
@@ -12,9 +8,7 @@ export const PLAYING_POSITIONS = [
 export type PlayingPosition = (typeof PLAYING_POSITIONS)[number]
 
 /**
- * Calculates displayed KU (Kelompok Usia) based on date of birth.
- * In accordance with PRD: KU is strictly derived and NOT stored in the database.
- * Example: '2014-05-20' -> 'KU 2014'
+ * Calculates displayed KU based on date of birth
  */
 export function calculateKU(
   dateOfBirth: string | Date | null | undefined,

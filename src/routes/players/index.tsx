@@ -357,7 +357,7 @@ function PlayerListPage() {
                           }),
                         })
                       }}
-                      className="hover:text-[#C62828] cursor-pointer font-bold ml-0.5"
+                      className="hover:text-[#972828] cursor-pointer font-bold ml-0.5"
                     >
                       ×
                     </button>
@@ -380,7 +380,7 @@ function PlayerListPage() {
                           }),
                         })
                       }
-                      className="hover:text-[#C62828] cursor-pointer font-bold ml-0.5"
+                      className="hover:text-[#972828] cursor-pointer font-bold ml-0.5"
                     >
                       ×
                     </button>
@@ -400,7 +400,7 @@ function PlayerListPage() {
                           }),
                         })
                       }
-                      className="hover:text-[#C62828] cursor-pointer font-bold ml-0.5"
+                      className="hover:text-[#972828] cursor-pointer font-bold ml-0.5"
                     >
                       ×
                     </button>
@@ -414,7 +414,7 @@ function PlayerListPage() {
             <button
               type="button"
               onClick={handleResetFilters}
-              className="text-xs font-semibold text-[#C62828] hover:text-[#B71C1C] hover:underline cursor-pointer"
+              className="text-xs font-semibold text-[#972828] hover:text-[#B71C1C] hover:underline cursor-pointer"
             >
               Reset Filter
             </button>
@@ -511,9 +511,6 @@ function PlayerListPage() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#f8fafc] text-[#475569] uppercase font-semibold text-[11px] border-b border-[#e2e8f0]">
                   <tr>
-                    <th scope="col" className="py-3.5 px-4 w-12 text-center">
-                      No
-                    </th>
                     <th scope="col" className="py-3.5 px-4">
                       Nama Lengkap
                     </th>
@@ -524,7 +521,10 @@ function PlayerListPage() {
                       Kelompok Usia
                     </th>
                     <th scope="col" className="py-3.5 px-4">
-                      Kelahiran
+                      TTL
+                    </th>
+                    <th scope="col" className="py-3.5 px-4">
+                      Administrasi
                     </th>
                     <th scope="col" className="py-3.5 px-4">
                       Status
@@ -535,16 +535,12 @@ function PlayerListPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e2e8f0]">
-                  {players.map((player, idx) => {
-                    const rowNumber = (page - 1) * 15 + idx + 1
+                  {players.map((player) => {
                     return (
                       <tr
                         key={player.id}
                         className="hover:bg-[#f8fafc]/80 transition"
                       >
-                        <td className="py-3 px-4 text-center tabular-nums text-[#64748b] font-medium">
-                          {rowNumber}
-                        </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-[#cbd5e1] bg-gray-100 flex items-center justify-center shadow-2xs">
@@ -580,20 +576,44 @@ function PlayerListPage() {
                           </span>
                         </td>
                         <td className="py-3 px-4">
-                          <span className="inline-flex px-2 py-0.5 rounded text-[11px] font-semibold bg-[#e8f5f1] text-[#143d32] border border-[#bce3d6] tabular-nums">
-                            {player.ku}
+                          <span className="inline-flex px-1.5 py-0.5 rounded text-[11px] font-semibold bg-[#e8f5f1] text-[#143d32] border border-[#bce3d6] tabular-nums">
+                            {player.age} Tahun
                           </span>
-                          {player.age !== null && (
-                            <span className="text-[10px] text-[#64748b] ml-1.5 tabular-nums">
-                              ({player.age} thn)
-                            </span>
-                          )}
                         </td>
                         <td className="py-3 px-4 text-[#334155]">
                           <div>{player.placeOfBirth}</div>
                           <div className="text-[11px] text-[#64748b] tabular-nums">
                             {formatIndonesianDate(player.dateOfBirth)}
                           </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <Link
+                            to="/administrations"
+                            search={{ search: player.fullName }}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-semibold border transition cursor-pointer ${
+                              player.administration?.status === 'lengkap'
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                                : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'
+                            }`}
+                            title={
+                              player.administration?.status === 'lengkap'
+                                ? 'Administrasi lengkap. Klik untuk lihat berkas'
+                                : 'Administrasi belum lengkap. Klik untuk kelola berkas'
+                            }
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                player.administration?.status === 'lengkap'
+                                  ? 'bg-emerald-600'
+                                  : 'bg-rose-600'
+                              }`}
+                            />
+                            <span>
+                              {player.administration?.status === 'lengkap'
+                                ? 'Sudah'
+                                : 'Belum'}
+                            </span>
+                          </Link>
                         </td>
                         <td className="py-3 px-4">
                           <button
@@ -633,7 +653,7 @@ function PlayerListPage() {
                             <button
                               type="button"
                               onClick={() => setPlayerToDelete(player)}
-                              className="px-2 py-1 text-xs font-medium text-[#C62828] hover:bg-[#FEF2F2] rounded border border-[#FECACA] transition cursor-pointer"
+                              className="px-2 py-1 text-xs font-medium text-[#972828] hover:bg-[#FEF2F2] rounded border border-[#FECACA] transition cursor-pointer"
                             >
                               Hapus
                             </button>
@@ -700,7 +720,7 @@ function PlayerListPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl border border-[#cbd5e1] shadow-xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#C62828] flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#972828] flex items-center justify-center shrink-0">
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -742,7 +762,7 @@ function PlayerListPage() {
                 type="button"
                 disabled={isDeleting}
                 onClick={handleConfirmDelete}
-                className="px-4 py-2 text-xs font-semibold text-white bg-[#C62828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-white bg-[#972828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
               >
                 {isDeleting ? 'Menghapus...' : 'Ya, Hapus Pemain'}
               </button>

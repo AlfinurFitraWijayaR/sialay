@@ -153,7 +153,7 @@ function CoachDetailPage() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-[#C62828] text-white flex items-center justify-center font-bold text-2xl tracking-wider">
+                <div className="w-full h-full bg-[#972828] text-white flex items-center justify-center font-bold text-2xl tracking-wider">
                   {coach.fullName.slice(0, 2).toUpperCase()}
                 </div>
               )}
@@ -194,7 +194,7 @@ function CoachDetailPage() {
             <div>
               <Link
                 to="/coaches"
-                className="text-xs font-semibold text-[#0f172a] hover:text-[#C62828] hover:underline"
+                className="text-xs font-semibold text-[#0f172a] hover:text-[#972828] hover:underline"
               >
                 ← Kembali ke Daftar Pelatih
               </Link>
@@ -212,9 +212,7 @@ function CoachDetailPage() {
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
-                    coach.status === 'active'
-                      ? 'bg-emerald-600'
-                      : 'bg-gray-500'
+                    coach.status === 'active' ? 'bg-emerald-600' : 'bg-gray-500'
                   }`}
                 />
                 {coach.status === 'active' ? 'Pelatih Aktif' : 'Non-Aktif'}
@@ -231,7 +229,7 @@ function CoachDetailPage() {
                 type="button"
                 disabled={isUploadingPhoto}
                 onClick={() => fileInputRef.current?.click()}
-                className="text-[11px] font-semibold text-[#0f172a] hover:text-[#C62828] hover:underline cursor-pointer disabled:opacity-50"
+                className="text-[11px] font-semibold text-[#0f172a] hover:text-[#972828] hover:underline cursor-pointer disabled:opacity-50"
               >
                 {isUploadingPhoto
                   ? 'Mengunggah...'
@@ -246,7 +244,7 @@ function CoachDetailPage() {
                     type="button"
                     disabled={isDeletingPhoto}
                     onClick={() => setShowDeletePhotoModal(true)}
-                    className="text-[11px] font-medium text-[#C62828] hover:underline cursor-pointer"
+                    className="text-[11px] font-medium text-[#972828] hover:underline cursor-pointer"
                   >
                     Hapus Foto
                   </button>
@@ -257,7 +255,7 @@ function CoachDetailPage() {
             {photoError && (
               <div
                 role="alert"
-                className="p-2 rounded bg-[#FEF2F2] border border-[#FECACA] text-[#C62828] text-[11px] mt-1"
+                className="p-2 rounded bg-[#FEF2F2] border border-[#FECACA] text-[#972828] text-[11px] mt-1"
               >
                 {photoError}
               </div>
@@ -277,7 +275,7 @@ function CoachDetailPage() {
           <button
             type="button"
             onClick={() => setShowDeleteModal(true)}
-            className="px-4 py-2 text-xs font-semibold text-[#C62828] bg-white hover:bg-[#FEF2F2] rounded-lg border border-[#FECACA] transition cursor-pointer"
+            className="px-4 py-2 text-xs font-semibold text-[#972828] bg-white hover:bg-[#FEF2F2] rounded-lg border border-[#FECACA] transition cursor-pointer"
           >
             Hapus Pelatih
           </button>
@@ -380,7 +378,7 @@ function CoachDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl border border-[#cbd5e1] shadow-xl max-w-sm w-full p-6 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#C62828] flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#972828] flex items-center justify-center shrink-0">
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -400,7 +398,8 @@ function CoachDetailPage() {
                   Hapus Foto Profil?
                 </h3>
                 <p className="text-xs text-[#64748b] mt-1">
-                  Foto profil pelatih ini akan dihapus secara permanen dari penyimpanan.
+                  Foto profil pelatih ini akan dihapus secara permanen dari
+                  penyimpanan.
                 </p>
               </div>
             </div>
@@ -418,7 +417,7 @@ function CoachDetailPage() {
                 type="button"
                 disabled={isDeletingPhoto}
                 onClick={handleDeletePhoto}
-                className="px-4 py-1.5 text-xs font-semibold text-white bg-[#C62828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
+                className="px-4 py-1.5 text-xs font-semibold text-white bg-[#972828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
               >
                 {isDeletingPhoto ? 'Menghapus...' : 'Ya, Hapus'}
               </button>
@@ -432,7 +431,7 @@ function CoachDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl border border-[#cbd5e1] shadow-xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#C62828] flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#972828] flex items-center justify-center shrink-0">
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -455,7 +454,9 @@ function CoachDetailPage() {
                   Apakah Anda yakin ingin menghapus data pelatih{' '}
                   <strong className="text-[#0f172a] font-semibold">
                     {coach.fullName}
-                  </strong>? Seluruh data dan berkas foto profil terkait akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.
+                  </strong>
+                  ? Seluruh data dan berkas foto profil terkait akan dihapus
+                  secara permanen. Tindakan ini tidak dapat dibatalkan.
                 </p>
               </div>
             </div>
@@ -473,7 +474,7 @@ function CoachDetailPage() {
                 type="button"
                 disabled={isDeleting}
                 onClick={handleDeleteCoach}
-                className="px-4 py-2 text-xs font-semibold text-white bg-[#C62828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-white bg-[#972828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
               >
                 {isDeleting ? 'Menghapus...' : 'Ya, Hapus Pelatih'}
               </button>

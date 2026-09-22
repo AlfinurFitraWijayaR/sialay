@@ -5,11 +5,7 @@ import {
   redirect,
   useRouter,
 } from '@tanstack/react-router'
-import {
-  calculateAge,
-  calculateKU,
-  PLAYING_POSITIONS,
-} from '../../../lib/player-utils'
+import { calculateAge, PLAYING_POSITIONS } from '../../../lib/player-utils'
 import { getAuthSessionFn } from '../../../server/auth/actions'
 import {
   deletePlayerPhotoFn,
@@ -63,7 +59,6 @@ function EditPlayerPage() {
   const [showDeletePhotoModal, setShowDeletePhotoModal] = useState(false)
   const [isDeletingPhoto, setIsDeletingPhoto] = useState(false)
 
-  const liveKU = calculateKU(dateOfBirth)
   const liveAge = calculateAge(dateOfBirth)
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,7 +100,9 @@ function EditPlayerPage() {
           await router.invalidate()
         } catch (err) {
           setPhotoError(
-            err instanceof Error ? err.message : 'Gagal memperbarui foto profil.',
+            err instanceof Error
+              ? err.message
+              : 'Gagal memperbarui foto profil.',
           )
         } finally {
           setIsUploadingPhoto(false)
@@ -193,118 +190,85 @@ function EditPlayerPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Link
-              to="/players/$playerId"
-              params={{ playerId: player.id }}
-              className="text-xs font-semibold text-[#0f172a] hover:text-[#C62828] hover:underline"
-            >
-              ← Batal & Kembali ke Profil Pemain
-            </Link>
-          </div>
-          <h1 className="text-xl font-bold text-[#0f172a] tracking-tight">
-            Ubah Data Pemain
-          </h1>
-          <p className="text-xs text-[#475569] mt-0.5">
-            Perbarui data administrasi untuk <strong>{player.fullName}</strong>.
-          </p>
-        </div>
-      </div>
-
-      {error && (
-        <div
-          role="alert"
-          className="p-4 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#C62828] text-xs flex items-start gap-2.5"
-        >
-          <svg
-            className="w-4 h-4 text-[#C62828] shrink-0 mt-0.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <Link
+            to="/players/$playerId"
+            params={{ playerId: player.id }}
+            className="text-xs font-semibold text-[#0f172a] hover:text-[#972828] hover:underline"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span className="font-medium">{error}</span>
+            ← Kembali ke Profil Pemain
+          </Link>
         </div>
-      )}
+        <h1 className="text-xl font-bold text-[#0f172a] tracking-tight">
+          Ubah Data Pemain
+        </h1>
+      </div>
 
       {/* Form Card */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Section 1: Identitas Pribadi & Foto */}
         <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm space-y-4">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#0f172a] border-b border-[#e2e8f0] pb-2">
-            1. Biodata Pribadi Pemain & Foto Profil
+            1. Biodata Pribadi Siswa
           </h2>
-
           {/* Profile Photo Card */}
-          <div className="p-4 rounded-lg bg-[#f8fafc] border border-[#e2e8f0]">
-            <div className="text-xs font-semibold text-[#334155] mb-2">
-              Foto Profil Pemain
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="w-20 h-20 rounded-xl overflow-hidden border border-[#cbd5e1] bg-white flex items-center justify-center shrink-0 shadow-2xs">
+              {player.photoDataUrl ? (
+                <img
+                  src={player.photoDataUrl}
+                  alt={player.fullName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-[#972828] text-white flex items-center justify-center font-bold text-lg">
+                  {player.fullName.slice(0, 2).toUpperCase()}
+                </div>
+              )}
             </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="w-20 h-20 rounded-xl overflow-hidden border border-[#cbd5e1] bg-white flex items-center justify-center shrink-0 shadow-2xs">
-                {player.photoDataUrl ? (
-                  <img
-                    src={player.photoDataUrl}
-                    alt={player.fullName}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-[#C62828] text-white flex items-center justify-center font-bold text-lg">
-                    {player.fullName.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
-              </div>
 
-              <div className="space-y-1.5 flex-1">
-                <div className="flex items-center gap-2">
+            <div className="space-y-1.5 flex-1">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isUploadingPhoto}
+                  onClick={() => photoInputRef.current?.click()}
+                  className="px-3 py-1.5 text-xs font-medium text-[#0f172a] bg-white hover:bg-gray-50 rounded-lg border border-[#cbd5e1] transition cursor-pointer disabled:opacity-50"
+                >
+                  {isUploadingPhoto
+                    ? 'Mengunggah...'
+                    : player.photoDataUrl
+                      ? 'Ganti Foto'
+                      : 'Unggah Foto Profil'}
+                </button>
+                {player.photoDataUrl && (
                   <button
                     type="button"
                     disabled={isUploadingPhoto}
-                    onClick={() => photoInputRef.current?.click()}
-                    className="px-3 py-1.5 text-xs font-medium text-[#0f172a] bg-white hover:bg-gray-50 rounded-lg border border-[#cbd5e1] transition cursor-pointer disabled:opacity-50"
+                    onClick={() => setShowDeletePhotoModal(true)}
+                    className="px-2.5 py-1.5 text-xs font-medium text-[#972828] hover:bg-[#FEF2F2] rounded-lg border border-[#FECACA] transition cursor-pointer disabled:opacity-50"
                   >
-                    {isUploadingPhoto
-                      ? 'Mengunggah...'
-                      : player.photoDataUrl
-                        ? 'Ganti Foto'
-                        : 'Unggah Foto Profil'}
+                    Hapus Foto
                   </button>
-                  {player.photoDataUrl && (
-                    <button
-                      type="button"
-                      disabled={isUploadingPhoto}
-                      onClick={() => setShowDeletePhotoModal(true)}
-                      className="px-2.5 py-1.5 text-xs font-medium text-[#C62828] hover:bg-[#FEF2F2] rounded-lg border border-[#FECACA] transition cursor-pointer disabled:opacity-50"
-                    >
-                      Hapus Foto
-                    </button>
-                  )}
-                </div>
-                <input
-                  ref={photoInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handlePhotoSelect}
-                  className="hidden"
-                />
-                <p className="text-[11px] text-[#64748b]">
-                  Format: JPG, PNG, atau WebP. Maks 2MB. Foto disimpan di storage
-                  privat.
-                </p>
-                {photoError && (
-                  <p className="text-[11px] text-[#C62828] font-medium">
-                    {photoError}
-                  </p>
                 )}
               </div>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handlePhotoSelect}
+                className="hidden"
+              />
+              <p className="text-[11px] text-[#64748b]">
+                Format: JPG, PNG, atau WebP. Maks 2MB. Foto disimpan di storage
+                privat.
+              </p>
+              {photoError && (
+                <p className="text-[11px] text-[#972828] font-medium">
+                  {photoError}
+                </p>
+              )}
             </div>
           </div>
 
@@ -314,7 +278,7 @@ function EditPlayerPage() {
                 htmlFor="fullName"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Nama Lengkap Pemain <span className="text-[#C62828]">*</span>
+                Nama Lengkap Pemain <span className="text-[#972828]">*</span>
               </label>
               <input
                 id="fullName"
@@ -331,7 +295,7 @@ function EditPlayerPage() {
                 htmlFor="placeOfBirth"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Tempat Lahir <span className="text-[#C62828]">*</span>
+                Tempat Lahir <span className="text-[#972828]">*</span>
               </label>
               <input
                 id="placeOfBirth"
@@ -348,7 +312,7 @@ function EditPlayerPage() {
                 htmlFor="dateOfBirth"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Tanggal Lahir <span className="text-[#C62828]">*</span>
+                Tanggal Lahir <span className="text-[#972828]">*</span>
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -361,7 +325,7 @@ function EditPlayerPage() {
                 />
                 {dateOfBirth && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-[#FEF9C3] text-[#78350F] border border-[#FDE047] tabular-nums whitespace-nowrap">
-                    {liveKU} {liveAge !== null ? `(${liveAge} thn)` : ''}
+                    {liveAge !== null ? `(${liveAge} Thn)` : ''}
                   </span>
                 )}
               </div>
@@ -372,7 +336,7 @@ function EditPlayerPage() {
                 htmlFor="address"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Alamat Tinggal Lengkap <span className="text-[#C62828]">*</span>
+                Alamat Tinggal Lengkap <span className="text-[#972828]">*</span>
               </label>
               <textarea
                 id="address"
@@ -383,12 +347,45 @@ function EditPlayerPage() {
                 className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D]"
               />
             </div>
-          </div>
-        </div>
+            <div>
+              <label
+                htmlFor="parentName"
+                className="block text-xs font-semibold text-[#334155] mb-1.5"
+              >
+                Nama Orang Tua / Wali{' '}
+                <span className="text-gray-400 font-normal">(Opsional)</span>
+              </label>
+              <input
+                id="parentName"
+                type="text"
+                value={parentName}
+                onChange={(e) => setParentName(e.target.value)}
+                placeholder="Contoh: Ahmad Pratama"
+                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D]"
+              />
+            </div>
 
-        {/* Section 2: Data Keanggotaan & Sepak Bola */}
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm space-y-4">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0f172a] border-b border-[#e2e8f0] pb-2">
+            <div>
+              <label
+                htmlFor="parentPhone"
+                className="block text-xs font-semibold text-[#334155] mb-1.5"
+              >
+                Nomor Telepon / WhatsApp Orang Tua{' '}
+                <span className="text-gray-400 font-normal">(Opsional)</span>
+              </label>
+              <input
+                id="parentPhone"
+                type="tel"
+                value={parentPhone}
+                onChange={(e) => setParentPhone(e.target.value)}
+                placeholder="Contoh: 081234567890"
+                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D]"
+              />
+            </div>
+          </div>
+
+          {/* Section 2: Data Keanggotaan & Sepak Bola */}
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0f172a] border-b border-[#e2e8f0] py-2">
             2. Posisi Lapangan & Status Keanggotaan
           </h2>
 
@@ -398,7 +395,7 @@ function EditPlayerPage() {
                 htmlFor="playingPosition"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Posisi Bermain <span className="text-[#C62828]">*</span>
+                Posisi Bermain <span className="text-[#972828]">*</span>
               </label>
               <select
                 id="playingPosition"
@@ -436,7 +433,7 @@ function EditPlayerPage() {
                 htmlFor="status"
                 className="block text-xs font-semibold text-[#334155] mb-1.5"
               >
-                Status Pemain <span className="text-[#C62828]">*</span>
+                Status Pemain <span className="text-[#972828]">*</span>
               </label>
               <select
                 id="status"
@@ -453,50 +450,27 @@ function EditPlayerPage() {
           </div>
         </div>
 
-        {/* Section 3: Orang Tua / Wali */}
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm space-y-4">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0f172a] border-b border-[#e2e8f0] pb-2">
-            3. Kontak Orang Tua / Wali
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="parentName"
-                className="block text-xs font-semibold text-[#334155] mb-1.5"
-              >
-                Nama Orang Tua / Wali{' '}
-                <span className="text-gray-400 font-normal">(Opsional)</span>
-              </label>
-              <input
-                id="parentName"
-                type="text"
-                value={parentName}
-                onChange={(e) => setParentName(e.target.value)}
-                placeholder="Contoh: Ahmad Pratama"
-                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D]"
+        {error && (
+          <div
+            role="alert"
+            className="p-4 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#972828] text-xs flex items-start gap-2.5"
+          >
+            <svg
+              className="w-4 h-4 text-[#972828] shrink-0 mt-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
-            </div>
-
-            <div>
-              <label
-                htmlFor="parentPhone"
-                className="block text-xs font-semibold text-[#334155] mb-1.5"
-              >
-                Nomor Telepon / WhatsApp Orang Tua{' '}
-                <span className="text-gray-400 font-normal">(Opsional)</span>
-              </label>
-              <input
-                id="parentPhone"
-                type="tel"
-                value={parentPhone}
-                onChange={(e) => setParentPhone(e.target.value)}
-                placeholder="Contoh: 081234567890"
-                className="w-full px-3 py-2 text-sm bg-white border border-[#cbd5e1] rounded-lg text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#FBC02D] focus:border-[#FBC02D]"
-              />
-            </div>
+            </svg>
+            <span className="font-medium">{error}</span>
           </div>
-        </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex items-center justify-end gap-3 pt-2">
@@ -522,7 +496,7 @@ function EditPlayerPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl border border-[#cbd5e1] shadow-xl max-w-sm w-full p-6 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#C62828] flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#972828] flex items-center justify-center shrink-0">
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -561,7 +535,7 @@ function EditPlayerPage() {
                 type="button"
                 disabled={isDeletingPhoto}
                 onClick={handleDeletePhoto}
-                className="px-4 py-2 text-xs font-semibold text-white bg-[#C62828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-white bg-[#972828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
               >
                 {isDeletingPhoto ? 'Menghapus...' : 'Ya, Hapus Foto'}
               </button>

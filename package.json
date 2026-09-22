@@ -16,7 +16,8 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:check": "tsx src/server/db/check.ts",
-    "db:seed-admin": "tsx src/server/db/seed-admin.ts"
+    "db:seed-admin": "tsx src/server/db/seed-admin.ts",
+    "db:seed-players": "tsx src/server/db/seed-players.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",

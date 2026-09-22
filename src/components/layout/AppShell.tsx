@@ -35,13 +35,7 @@ export function AppShell({ children, admin }: AppShellProps) {
       {/* Mobile Top Bar */}
       <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-[#e2e8f0]">
         <div className="flex items-center gap-2">
-          <span
-            className="w-2.5 h-2.5 rounded-full bg-[#FBC02D]"
-            aria-hidden="true"
-          />
-          <span className="font-bold tracking-wider text-sm uppercase text-[#0f172a]">
-            SIALAY
-          </span>
+          <span className="font-semibold text-[#0f172a]">Welkambek Min</span>
         </div>
         <button
           type="button"
@@ -116,7 +110,7 @@ export function AppShell({ children, admin }: AppShellProps) {
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className={`w-4 h-4 ${
-                  location.pathname === '/' ? 'text-[#C62828]' : 'text-gray-500'
+                  location.pathname === '/' ? 'text-[#972828]' : 'text-gray-500'
                 }`}
                 viewBox="0 0 24 24"
                 fill="none"
@@ -145,7 +139,7 @@ export function AppShell({ children, admin }: AppShellProps) {
               <svg
                 className={`w-4 h-4 ${
                   location.pathname.startsWith('/players')
-                    ? 'text-[#C62828]'
+                    ? 'text-[#972828]'
                     : 'text-gray-500'
                 }`}
                 fill="none"
@@ -163,6 +157,35 @@ export function AppShell({ children, admin }: AppShellProps) {
             </Link>
 
             <Link
+              to="/administrations"
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition ${
+                location.pathname.startsWith('/administrations')
+                  ? 'bg-[#FEF9C3] text-[#78350F] font-semibold border-l-4 border-[#FBC02D]'
+                  : 'text-gray-700 hover:bg-[#FEF9C3]/50 hover:text-[#0f172a] border-l-4 border-transparent'
+              }`}
+            >
+              <svg
+                className={`w-4 h-4 ${
+                  location.pathname.startsWith('/administrations')
+                    ? 'text-[#972828]'
+                    : 'text-gray-500'
+                }`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <span>Administrasi Siswa</span>
+            </Link>
+
+            <Link
               to="/coaches"
               onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition ${
@@ -174,7 +197,7 @@ export function AppShell({ children, admin }: AppShellProps) {
               <svg
                 className={`w-4 h-4 ${
                   location.pathname.startsWith('/coaches')
-                    ? 'text-[#C62828]'
+                    ? 'text-[#972828]'
                     : 'text-gray-500'
                 }`}
                 fill="none"
@@ -198,7 +221,7 @@ export function AppShell({ children, admin }: AppShellProps) {
           {/* Admin User Card */}
           <div className="flex items-center justify-between p-2.5 mb-3 bg-[#f8fafc] rounded-lg border border-[#e2e8f0]">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-6 h-6 rounded-full bg-[#C62828] text-white text-[10px] font-bold flex items-center justify-center shrink-0 border border-[#B71C1C]">
+              <div className="w-6 h-6 rounded-full bg-[#972828] text-white text-[10px] font-bold flex items-center justify-center shrink-0 border border-[#B71C1C]">
                 A
               </div>
               <div className="min-w-0">
@@ -212,7 +235,7 @@ export function AppShell({ children, admin }: AppShellProps) {
               type="button"
               disabled={isLoggingOut}
               onClick={handleLogout}
-              className="text-[11px] font-medium text-[#C62828] hover:text-[#B71C1C] px-2 py-1 bg-[#FEF2F2] hover:bg-[#FEE2E2] rounded border border-[#FECACA] transition disabled:opacity-50 cursor-pointer"
+              className="text-[11px] font-medium text-[#972828] hover:text-[#B71C1C] px-2 py-1 bg-[#FEF2F2] hover:bg-[#FEE2E2] rounded border border-[#FECACA] transition disabled:opacity-50 cursor-pointer"
             >
               {isLoggingOut ? '...' : 'Keluar'}
             </button>
@@ -233,25 +256,7 @@ export function AppShell({ children, admin }: AppShellProps) {
       <div className="flex-1 flex flex-col min-w-0 md:pl-64">
         <header className="hidden md:flex items-center justify-between h-14 px-8 bg-white border-b border-[#e2e8f0]">
           <div className="text-xs text-[#475569]">
-            <span className="font-semibold text-[#0f172a]">
-              SSB MUNDINGLAYA
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-xs text-[#475569]">
-              <span className="w-2 h-2 rounded-full bg-[#FBC02D]" />
-              <span>
-                Masuk sebagai: <strong>{admin?.username || 'admin'}</strong>
-              </span>
-            </div>
-            <button
-              type="button"
-              disabled={isLoggingOut}
-              onClick={handleLogout}
-              className="text-xs font-medium text-[#C62828] hover:text-[#B71C1C] px-2.5 py-1 bg-[#FEF2F2] hover:bg-[#FEE2E2] rounded border border-[#FECACA] transition cursor-pointer"
-            >
-              Keluar
-            </button>
+            <span className="font-semibold text-[#0f172a]">Welkambek Min</span>
           </div>
         </header>
 

@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { count, eq } from 'drizzle-orm'
 import { getCurrentSession } from '../auth/session'
 import { db } from '../db'
-import { coaches, players } from '../db/schema'
+import { coaches, players, administrations } from '../db/schema'
 import { logServerError, sanitizeErrorMessage } from '../security/error-handler'
 
 export interface AgeGroupStat {
@@ -40,6 +40,14 @@ export interface SkillAspectStat {
   level: string
 }
 
+export interface AdminDocMetric {
+  key: string
+  label: string
+  collected: number
+  missing: number
+  percentage: number
+}
+
 export interface DashboardStats {
   players: {
     total: number
@@ -63,6 +71,13 @@ export interface DashboardStats {
     grade: string
     aspects: SkillAspectStat[]
   }
+  administrations: {
+    total: number
+    complete: number
+    incomplete: number
+    completionRate: number
+    documents: AdminDocMetric[]
+  }
 }
 
 // Get Dashboard Aggregated Statistics
@@ -81,6 +96,11 @@ export const getDashboardStatsFn = createServerFn({ method: 'GET' }).handler(
         coachTotalRes,
         coachActiveRes,
         coachInactiveRes,
+        adminCompleteRes,
+        adminRegRes,
+        adminKkRes,
+        adminAkteRes,
+        adminPhotoRes,
         allPlayersList,
       ] = await Promise.all([
         db.select({ count: count() }).from(players),
@@ -102,6 +122,26 @@ export const getDashboardStatsFn = createServerFn({ method: 'GET' }).handler(
           .from(coaches)
           .where(eq(coaches.status, 'inactive')),
         db
+          .select({ count: count() })
+          .from(administrations)
+          .where(eq(administrations.status, 'lengkap')),
+        db
+          .select({ count: count() })
+          .from(administrations)
+          .where(eq(administrations.registrationForm, 'ada')),
+        db
+          .select({ count: count() })
+          .from(administrations)
+          .where(eq(administrations.familyCard, 'ada')),
+        db
+          .select({ count: count() })
+          .from(administrations)
+          .where(eq(administrations.birthCertificate, 'ada')),
+        db
+          .select({ count: count() })
+          .from(administrations)
+          .where(eq(administrations.pasPhoto, 'ada')),
+        db
           .select({
             id: players.id,
             placeOfBirth: players.placeOfBirth,
@@ -117,54 +157,53 @@ export const getDashboardStatsFn = createServerFn({ method: 'GET' }).handler(
       const totalPlayers = Number(playerTotalRes[0]?.count || 0)
       const totalCoaches = Number(coachTotalRes[0]?.count || 0)
 
-      const targetAges = [9, 10, 11, 12, 13, 14, 15, 16, 17]
-      const ageGroupData: {
-        [age: number]: { active: number; inactive: number }
-      } = {}
-
-      for (const a of targetAges) {
-        ageGroupData[a] = { active: 0, inactive: 0 }
+      // Data Kelompok Usia (KU) berdasarkan Tahun Kelahiran
+      const currentYear = new Date().getFullYear()
+      interface YearGroupConfig {
+        key: string
+        label: string
+        matches: (year: number) => boolean
       }
 
-      const now = new Date()
-      for (const p of allPlayersList) {
-        if (p.dateOfBirth) {
-          const dob = new Date(p.dateOfBirth)
-          if (!isNaN(dob.getTime())) {
-            let age = now.getFullYear() - dob.getFullYear()
-            const m = now.getMonth() - dob.getMonth()
-            if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) {
-              age--
-            }
+      const yearGroups: YearGroupConfig[] = [
+        {
+          key: '2008-2010',
+          label: `KU 2008-2010 (${currentYear - 2010}-${currentYear - 2008} thn)`,
+          matches: (y: number) => y <= 2010,
+        },
+        ...[2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020].map(
+          (year) => ({
+            key: String(year),
+            label: `KU ${year} (${currentYear - year} thn)`,
+            matches: (y: number) => y === year || (year === 2020 && y > 2020),
+          }),
+        ),
+      ]
 
-            let clampedAge = age
-            if (clampedAge < 6) clampedAge = 6
-            if (clampedAge > 17) clampedAge = 17
+      const ageGroups: AgeGroupStat[] = yearGroups.map((g) => {
+        let active = 0
+        let inactive = 0
 
-            if (p.status === 'active') {
-              ageGroupData[clampedAge].active++
-            } else {
-              ageGroupData[clampedAge].inactive++
+        for (const p of allPlayersList) {
+          if (p.dateOfBirth) {
+            const dob = new Date(p.dateOfBirth)
+            if (!isNaN(dob.getTime())) {
+              const birthYear = dob.getFullYear()
+              if (g.matches(birthYear)) {
+                if (p.status === 'active') {
+                  active++
+                } else {
+                  inactive++
+                }
+              }
             }
           }
         }
-      }
 
-      const ageGroups: AgeGroupStat[] = targetAges.map((age) => {
-        const active = ageGroupData[age].active
-        const inactive = ageGroupData[age].inactive
         const total = active + inactive
-        const key = age === 17 ? 'KU 17+' : `KU ${age}`
-        const label =
-          age === 6
-            ? 'KU 6 (≤ 6 Tahun)'
-            : age === 17
-              ? 'KU 17 (≥ 17 Tahun)'
-              : `KU ${age} (${age} Tahun)`
-
         return {
-          key,
-          label,
+          key: g.key,
+          label: g.label,
           active,
           inactive,
           total,
@@ -175,7 +214,7 @@ export const getDashboardStatsFn = createServerFn({ method: 'GET' }).handler(
 
       // 2. Playing position breakdown
       const posCounts: { [key: string]: number } = {
-        Kiper: 0,
+        Keeper: 0,
         Bek: 0,
         Gelandang: 0,
         Penyerang: 0,
@@ -183,31 +222,13 @@ export const getDashboardStatsFn = createServerFn({ method: 'GET' }).handler(
 
       for (const p of allPlayersList) {
         const pos = (p.playingPosition || '').toLowerCase()
-        if (pos.includes('kiper') || pos.includes('penjaga gawang')) {
-          posCounts['Kiper']++
-        } else if (
-          pos.includes('bek') ||
-          pos.includes('bertahan') ||
-          pos.includes('defender') ||
-          pos.includes('cb') ||
-          pos.includes('lb') ||
-          pos.includes('rb')
-        ) {
+        if (pos.includes('keeper')) {
+          posCounts['Keeper']++
+        } else if (pos.includes('bek')) {
           posCounts['Bek']++
-        } else if (
-          pos.includes('gelandang') ||
-          pos.includes('tengah') ||
-          pos.includes('midfield') ||
-          pos.includes('mf')
-        ) {
+        } else if (pos.includes('gelandang')) {
           posCounts['Gelandang']++
-        } else if (
-          pos.includes('penyerang') ||
-          pos.includes('striker') ||
-          pos.includes('depan') ||
-          pos.includes('forward') ||
-          pos.includes('fw')
-        ) {
+        } else if (pos.includes('penyerang')) {
           posCounts['Penyerang']++
         } else {
           posCounts['Gelandang']++
@@ -216,11 +237,11 @@ export const getDashboardStatsFn = createServerFn({ method: 'GET' }).handler(
 
       const positionBreakdown: PositionStat[] = [
         {
-          position: 'Penjaga Gawang (Kiper)',
-          count: posCounts['Kiper'],
+          position: 'Keeper',
+          count: posCounts['Keeper'],
           percentage:
             totalPlayers > 0
-              ? Math.round((posCounts['Kiper'] / totalPlayers) * 100)
+              ? Math.round((posCounts['Keeper'] / totalPlayers) * 100)
               : 0,
         },
         {
@@ -313,6 +334,45 @@ export const getDashboardStatsFn = createServerFn({ method: 'GET' }).handler(
         ],
       }
 
+      const regCount = Number(adminRegRes[0]?.count || 0)
+      const kkCount = Number(adminKkRes[0]?.count || 0)
+      const akteCount = Number(adminAkteRes[0]?.count || 0)
+      const photoCount = Number(adminPhotoRes[0]?.count || 0)
+      const completeAdminCount = Number(adminCompleteRes[0]?.count || 0)
+      const calcPct = (cnt: number) =>
+        totalPlayers > 0 ? Math.round((cnt / totalPlayers) * 100) : 0
+
+      const adminDocuments: AdminDocMetric[] = [
+        {
+          key: 'form',
+          label: 'Formulir',
+          collected: regCount,
+          missing: Math.max(0, totalPlayers - regCount),
+          percentage: calcPct(regCount),
+        },
+        {
+          key: 'kk',
+          label: 'Kartu Keluarga',
+          collected: kkCount,
+          missing: Math.max(0, totalPlayers - kkCount),
+          percentage: calcPct(kkCount),
+        },
+        {
+          key: 'akte',
+          label: 'Akte Kelahiran',
+          collected: akteCount,
+          missing: Math.max(0, totalPlayers - akteCount),
+          percentage: calcPct(akteCount),
+        },
+        {
+          key: 'foto',
+          label: 'Pas Photo',
+          collected: photoCount,
+          missing: Math.max(0, totalPlayers - photoCount),
+          percentage: calcPct(photoCount),
+        },
+      ]
+
       return {
         players: {
           total: totalPlayers,
@@ -329,6 +389,13 @@ export const getDashboardStatsFn = createServerFn({ method: 'GET' }).handler(
         cityDistribution,
         attendance,
         studentReport,
+        administrations: {
+          total: totalPlayers,
+          complete: completeAdminCount,
+          incomplete: Math.max(0, totalPlayers - completeAdminCount),
+          completionRate: calcPct(completeAdminCount),
+          documents: adminDocuments,
+        },
       }
     } catch (err: unknown) {
       logServerError('getDashboardStatsFn', err)

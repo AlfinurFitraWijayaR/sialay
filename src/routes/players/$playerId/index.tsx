@@ -155,13 +155,22 @@ function PlayerDetailPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-4">
+      <div className="flex items-center">
+        <Link
+          to="/players"
+          className="text-xs font-semibold text-[#0f172a] hover:text-[#972828] hover:underline"
+        >
+          ← Kembali ke Daftar Pemain
+        </Link>
+      </div>
+
       {/* Header Bar */}
       <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
           {/* Avatar Photo Frame */}
-          <div className="relative group shrink-0">
-            <div className="w-24 h-24 rounded-2xl overflow-hidden border border-[#cbd5e1] bg-gray-100 flex items-center justify-center shadow-xs">
+          <div className="relative group shrink-0 mx-auto">
+            <div className="w-20 h-20 rounded-2xl overflow-hidden border border-[#cbd5e1] bg-gray-100 flex items-center justify-center shadow-xs">
               {player.photoDataUrl ? (
                 <img
                   src={player.photoDataUrl}
@@ -169,7 +178,7 @@ function PlayerDetailPage() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-[#C62828] text-white flex flex-col items-center justify-center font-bold text-2xl tracking-wider">
+                <div className="w-full h-full bg-[#972828] text-white flex flex-col items-center justify-center font-bold text-2xl tracking-wider">
                   {player.fullName.slice(0, 2).toUpperCase()}
                 </div>
               )}
@@ -213,40 +222,29 @@ function PlayerDetailPage() {
             />
           </div>
 
+          {/* Username */}
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Link
-                to="/players"
-                className="text-xs font-semibold text-[#0f172a] hover:text-[#C62828] hover:underline"
-              >
-                ← Kembali ke Daftar Pemain
-              </Link>
-            </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col items-start justify-start gap-2">
               <h1 className="text-2xl font-bold text-[#0f172a] tracking-tight">
                 {player.fullName}
               </h1>
               <span
-                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold border ${
+                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs border ${
                   player.status === 'active'
                     ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                     : 'bg-gray-100 text-gray-700 border-gray-300'
                 }`}
               >
                 <span
-                  className={`w-1.5 h-1.5 rounded-full ${
+                  className={`w-1 h-1 rounded-full ${
                     player.status === 'active'
                       ? 'bg-emerald-600'
                       : 'bg-gray-500'
                   }`}
                 />
-                {player.status === 'active' ? 'Pemain Aktif' : 'Non-Aktif'}
+                {player.status === 'active' ? 'Siswa Aktif' : 'Siswa Non-Aktif'}
               </span>
             </div>
-            <p className="text-xs text-[#64748b]">
-              ID Anggota:{' '}
-              <code className="font-mono text-[#334155]">{player.id}</code>
-            </p>
 
             {/* Photo Action Links */}
             <div className="flex items-center gap-2 pt-1">
@@ -255,7 +253,7 @@ function PlayerDetailPage() {
                   type="button"
                   disabled={isUploadingPhoto}
                   onClick={() => setShowDeletePhotoModal(true)}
-                  className="text-[11px] font-medium text-[#C62828] hover:underline cursor-pointer"
+                  className="text-[11px] font-medium text-[#972828] hover:underline cursor-pointer"
                 >
                   Hapus Foto
                 </button>
@@ -265,7 +263,7 @@ function PlayerDetailPage() {
             {photoError && (
               <div
                 role="alert"
-                className="text-[11px] text-[#C62828] bg-[#FEF2F2] border border-[#FECACA] rounded px-2.5 py-1 mt-1 max-w-md"
+                className="text-[11px] text-[#972828] bg-[#FEF2F2] border border-[#FECACA] rounded px-2.5 py-1 mt-1 max-w-md"
               >
                 {photoError}
               </div>
@@ -292,7 +290,7 @@ function PlayerDetailPage() {
           <button
             type="button"
             onClick={() => setShowDeleteModal(true)}
-            className="px-3 py-2 text-xs font-medium text-[#C62828] hover:bg-[#FEF2F2] rounded-lg border border-[#FECACA] transition cursor-pointer"
+            className="px-3 py-2 text-xs font-medium text-[#972828] hover:bg-[#FEF2F2] rounded-lg border border-[#FECACA] transition cursor-pointer"
           >
             Hapus
           </button>
@@ -311,41 +309,75 @@ function PlayerDetailPage() {
           </h2>
 
           <div className="space-y-3 text-xs">
-            <div>
-              <div className="text-[11px] font-medium text-[#64748b]">
-                Kelompok Usia (KU)
+            <div className="grid grid-cols-1 gap-2">
+              <div>
+                <div className="text-[11px] font-medium text-[#64748b]">
+                  TTL
+                </div>
+                <div className="text-sm font-semibold text-[#0f172a] mt-0.5">
+                  {player.placeOfBirth},{' '}
+                  {formatIndonesianDate(player.dateOfBirth)}
+                  {player.age !== null && (
+                    <span className="text-xs font-normal text-[#64748b] ml-1.5 tabular-nums">
+                      ({player.age} tahun)
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="text-sm font-semibold text-[#0f172a] mt-0.5">
-                {player.ku}
-              </div>
-            </div>
 
-            <div>
-              <div className="text-[11px] font-medium text-[#64748b]">
-                Posisi Bermain
+              <div>
+                <div className="text-[11px] font-medium text-[#64748b]">
+                  Alamat
+                </div>
+                <div className="text-sm font-medium text-[#0f172a] mt-0.5 leading-relaxed">
+                  {player.address}
+                </div>
               </div>
-              <div className="text-sm font-semibold text-[#0f172a] mt-0.5">
-                {player.playingPosition}
-              </div>
-            </div>
 
-            <div>
-              <div className="text-[11px] font-medium text-[#64748b]">
-                Tanggal Bergabung
+              <div>
+                <div className="text-[11px] font-medium text-[#64748b]">
+                  Kelompok Usia (KU)
+                </div>
+                <div className="text-sm font-semibold text-[#0f172a] mt-0.5">
+                  {player.ku}
+                </div>
               </div>
-              <div className="text-sm font-medium text-[#0f172a] mt-0.5">
-                {player.joinDate
-                  ? formatIndonesianDate(player.joinDate)
-                  : 'Belum tercatat'}
-              </div>
-            </div>
 
-            <div>
-              <div className="text-[11px] font-medium text-[#64748b]">
-                Nomor Jersey
+              <div>
+                <div className="text-[11px] font-medium text-[#64748b]">
+                  Posisi Bermain
+                </div>
+                <div className="text-sm font-semibold text-[#0f172a] mt-0.5">
+                  {player.playingPosition}
+                </div>
               </div>
-              <div className="text-sm font-medium text-[#0f172a] mt-0.5">
-                Belum tercatat
+
+              <div>
+                <div className="text-[11px] font-medium text-[#64748b]">
+                  Tanggal Bergabung
+                </div>
+                <div className="text-sm font-medium text-[#0f172a] mt-0.5">
+                  {player.joinDate
+                    ? formatIndonesianDate(player.joinDate)
+                    : 'Belum tercatat'}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[11px] font-medium text-[#64748b]">
+                  Nama Orang Tua/Wali
+                </div>
+                <div className="text-sm font-medium text-[#0f172a] mt-0.5 leading-relaxed">
+                  {player.parentName || 'Belum tercatat'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] font-medium text-[#64748b]">
+                  No. Handphone Orang Tua/Wali
+                </div>
+                <div className="text-sm font-medium text-[#0f172a] mt-0.5 leading-relaxed">
+                  {player.parentPhone || 'Belum tercatat'}
+                </div>
               </div>
             </div>
           </div>
@@ -353,49 +385,101 @@ function PlayerDetailPage() {
 
         {/* Card 2: Biodata & Kontak Orang Tua */}
         <div className="bg-white rounded-lg border border-[#e2e8f0] p-6 shadow-sm space-y-4">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0f172a] border-b border-[#e2e8f0] pb-2">
-            Biodata Pribadi & Orang Tua
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#e2e8f0] pb-3">
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#0f172a]">
+                Status Berkas Administrasi
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/administrations"
+                className="text-xs font-semibold text-[#972828] hover:text-[#B71C1C] hover:underline"
+              >
+                Kelola di Administrasi &rarr;
+              </Link>
+            </div>
+          </div>
 
-          <div className="space-y-3 text-xs">
-            <div>
-              <div className="text-[11px] font-medium text-[#64748b]">
-                Tempat, Tanggal Lahir
+          <div className="grid grid-cols-1 gap-10">
+            {/* 1. Formulir */}
+            <div className="p-3 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold text-[#0f172a]">
+                  Formulir Pendafttaran
+                </div>
               </div>
-              <div className="text-sm font-semibold text-[#0f172a] mt-0.5">
-                {player.placeOfBirth},{' '}
-                {formatIndonesianDate(player.dateOfBirth)}
-                {player.age !== null && (
-                  <span className="text-xs font-normal text-[#64748b] ml-1.5 tabular-nums">
-                    ({player.age} tahun)
-                  </span>
-                )}
-              </div>
+              <span
+                className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                  player.administration?.registrationForm === 'ada'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-rose-100 text-rose-800'
+                }`}
+              >
+                {player.administration?.registrationForm === 'ada'
+                  ? 'Ada'
+                  : 'Belum Ada'}
+              </span>
             </div>
 
-            <div>
-              <div className="text-[11px] font-medium text-[#64748b]">
-                Alamat
+            {/* 2. Kartu Keluarga */}
+            <div className="p-3 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold text-[#0f172a]">
+                  Kartu Keluarga
+                </div>
               </div>
-              <div className="text-sm font-medium text-[#0f172a] mt-0.5 leading-relaxed">
-                {player.address}
-              </div>
+              <span
+                className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                  player.administration?.familyCard === 'ada'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-rose-100 text-rose-800'
+                }`}
+              >
+                {player.administration?.familyCard === 'ada'
+                  ? 'Ada'
+                  : 'Belum Ada'}
+              </span>
             </div>
-            <div>
-              <div className="text-[11px] font-medium text-[#64748b]">
-                Nama Orang Tua/Wali
+
+            {/* 3. Akte Kelahiran */}
+            <div className="p-3 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold text-[#0f172a]">
+                  Akte Kelahiran
+                </div>
               </div>
-              <div className="text-sm font-medium text-[#0f172a] mt-0.5 leading-relaxed">
-                {player.parentName || 'Belum tercatat'}
-              </div>
+              <span
+                className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                  player.administration?.birthCertificate === 'ada'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-rose-100 text-rose-800'
+                }`}
+              >
+                {player.administration?.birthCertificate === 'ada'
+                  ? 'Ada'
+                  : 'Belum Ada'}
+              </span>
             </div>
-            <div>
-              <div className="text-[11px] font-medium text-[#64748b]">
-                No. Handphone Orang Tua/Wali
+
+            {/* 4. Pas Photo */}
+            <div className="p-3 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold text-[#0f172a]">
+                  Pas Photo 3x4
+                </div>
               </div>
-              <div className="text-sm font-medium text-[#0f172a] mt-0.5 leading-relaxed">
-                {player.parentPhone || 'Belum tercatat'}
-              </div>
+              <span
+                className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                  player.administration?.pasPhoto === 'ada'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-rose-100 text-rose-800'
+                }`}
+              >
+                {player.administration?.pasPhoto === 'ada'
+                  ? 'Ada'
+                  : 'Belum Ada'}
+              </span>
             </div>
           </div>
         </div>
@@ -406,7 +490,7 @@ function PlayerDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl border border-[#cbd5e1] shadow-xl max-w-sm w-full p-6 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#C62828] flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#972828] flex items-center justify-center shrink-0">
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -445,7 +529,7 @@ function PlayerDetailPage() {
                 type="button"
                 disabled={isDeletingPhoto}
                 onClick={handleDeletePhoto}
-                className="px-4 py-2 text-xs font-semibold text-white bg-[#C62828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-white bg-[#972828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
               >
                 {isDeletingPhoto ? 'Menghapus...' : 'Ya, Hapus Foto'}
               </button>
@@ -459,7 +543,7 @@ function PlayerDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl border border-[#cbd5e1] shadow-xl max-w-sm w-full p-6 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#C62828] flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#972828] flex items-center justify-center shrink-0">
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -499,7 +583,7 @@ function PlayerDetailPage() {
                 type="button"
                 disabled={isDeleting}
                 onClick={handleDelete}
-                className="px-4 py-2 text-xs font-semibold text-white bg-[#C62828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-white bg-[#972828] hover:bg-[#B71C1C] rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
               >
                 {isDeleting ? 'Menghapus...' : 'Ya, Hapus Data'}
               </button>

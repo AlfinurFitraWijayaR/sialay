@@ -5,8 +5,8 @@ import { and, count, desc, eq, gte, ilike, lte } from 'drizzle-orm'
 import { calculateAge, calculateKU } from '../../lib/player-utils'
 import { getCurrentSession } from '../auth/session'
 import { db } from '../db'
-import type { Player } from '../db/schema'
-import { players } from '../db/schema'
+import type { Administration, Player } from '../db/schema'
+import { administrations, players } from '../db/schema'
 import { logServerError, sanitizeErrorMessage } from '../security/error-handler'
 import type { ValidatedPlayerInput } from '../security/validation'
 import {
@@ -24,6 +24,7 @@ export interface PlayerListItem extends Player {
   ku: string
   age: number | null
   photoDataUrl?: string | null
+  administration?: Administration | null
 }
 
 export interface GetPlayersFilter {
@@ -81,7 +82,6 @@ export const getPlayersFn = createServerFn({ method: 'GET' })
       const conditions: SQL[] = []
 
       if (search) {
-        // Parameterized ILIKE query via Drizzle
         conditions.push(ilike(players.fullName, `%${search}%`))
       }
 
@@ -98,13 +98,15 @@ export const getPlayersFn = createServerFn({ method: 'GET' })
 
       const [totalRows, rows, allDobRows] = await Promise.all([
         db.select({ val: count() }).from(players).where(whereClause),
-        db
-          .select()
-          .from(players)
-          .where(whereClause)
-          .orderBy(desc(players.createdAt))
-          .limit(pageSize)
-          .offset(offset),
+        db.query.players.findMany({
+          where: whereClause,
+          with: {
+            administration: true,
+          },
+          orderBy: [desc(players.createdAt)],
+          limit: pageSize,
+          offset: offset,
+        }),
         db.selectDistinct({ dateOfBirth: players.dateOfBirth }).from(players),
       ])
 
@@ -120,14 +122,19 @@ export const getPlayersFn = createServerFn({ method: 'GET' })
       ).sort((a, b) => b - a)
 
       const listWithDerivedKU: PlayerListItem[] = await Promise.all(
-        rows.map(async (p) => ({
-          ...p,
-          ku: calculateKU(p.dateOfBirth),
-          age: calculateAge(p.dateOfBirth),
-          photoDataUrl: p.profilePhotoKey
-            ? await getPhotoDataUrl(p.profilePhotoKey)
-            : null,
-        })),
+        rows.map(async (p) => {
+          const admin = (p as { administration?: typeof p.administration })
+            .administration
+          return {
+            ...p,
+            ku: calculateKU(p.dateOfBirth),
+            age: calculateAge(p.dateOfBirth),
+            photoDataUrl: p.profilePhotoKey
+              ? await getPhotoDataUrl(p.profilePhotoKey)
+              : null,
+            administration: admin,
+          }
+        }),
       )
 
       return {
@@ -156,17 +163,17 @@ export const getPlayerDetailFn = createServerFn({ method: 'GET' })
         throw new Error('Akses tidak diizinkan. Silakan login terlebih dahulu.')
       }
 
-      const results = await db
-        .select()
-        .from(players)
-        .where(eq(players.id, data.id))
-        .limit(1)
+      const player = await db.query.players.findFirst({
+        where: eq(players.id, data.id),
+        with: {
+          administration: true,
+        },
+      })
 
-      if (results.length === 0) {
+      if (!player) {
         return null
       }
 
-      const player = results[0]
       const photoDataUrl = player.profilePhotoKey
         ? await getPhotoDataUrl(player.profilePhotoKey)
         : null
@@ -176,6 +183,7 @@ export const getPlayerDetailFn = createServerFn({ method: 'GET' })
         ku: calculateKU(player.dateOfBirth),
         age: calculateAge(player.dateOfBirth),
         photoDataUrl,
+        administration: player.administration,
       }
     } catch (err: unknown) {
       logServerError('getPlayerDetailFn', err)
@@ -217,6 +225,30 @@ export const createPlayerFn = createServerFn({ method: 'POST' })
         joinDate: data.joinDate || null,
         status: data.status,
         profilePhotoKey: savedPhotoKey,
+      })
+
+      // Inisialisasi atau simpan berkas administrasi wajib siswa baru
+      const regForm = data.administration?.registrationForm || 'belum_ada'
+      const famCard = data.administration?.familyCard || 'belum_ada'
+      const birthCert = data.administration?.birthCertificate || 'belum_ada'
+      const photoDoc = data.administration?.pasPhoto || 'belum_ada'
+      const adminNotes = data.administration?.notes || null
+
+      const isComplete =
+        regForm === 'ada' &&
+        famCard === 'ada' &&
+        birthCert === 'ada' &&
+        photoDoc === 'ada'
+
+      await db.insert(administrations).values({
+        id: crypto.randomUUID(),
+        playerId: newId,
+        registrationForm: regForm,
+        familyCard: famCard,
+        birthCertificate: birthCert,
+        pasPhoto: photoDoc,
+        status: isComplete ? 'lengkap' : 'belum_lengkap',
+        notes: adminNotes,
       })
 
       return { success: true, id: newId }

@@ -7,7 +7,7 @@ interface DashboardChartsProps {
 
 export function DashboardCharts({ stats }: DashboardChartsProps) {
   const [hoveredKuIndex, setHoveredKuIndex] = useState<number | null>(null)
-  const [hoveredWeekIndex, setHoveredWeekIndex] = useState<number | null>(null)
+  const [hoveredDocIndex, setHoveredDocIndex] = useState<number | null>(null)
 
   // 1. Data Kelompok Usia (KU)
   const ageGroups = stats.ageGroups
@@ -35,36 +35,29 @@ export function DashboardCharts({ stats }: DashboardChartsProps) {
   // 2. Data Komposisi Squad (Posisi Lapangan)
   const positions = stats.positionBreakdown
   const totalPosPlayers = positions.reduce((acc, p) => acc + p.count, 0)
-  const posColors = ['#FBC02D', '#C62828', '#E5A800', '#991B1B']
+  const posColors = ['#FCAD38', '#EB7F31', '#E45742', '#972828']
 
   const donutRadius = 38
   const donutCircumference = 2 * Math.PI * donutRadius
   let cumulativeOffset = 0
 
-  const activeCoaches = stats.coaches.active
-  const activePlayers = stats.players.active
-  const playerPerCoachRatio =
-    activeCoaches > 0
-      ? (activePlayers / activeCoaches).toFixed(1)
-      : activePlayers.toString()
+  // 3. Data Grafik Administrasi
+  const adminDocs = stats.administrations.documents
+  const adminChartWidth = 480
+  const adminChartHeight = 160
+  const adminPadLeft = 28
+  const adminPadRight = 14
+  const adminPadTop = 18
+  const adminPadBottom = 30
+  const adminPlotWidth = adminChartWidth - adminPadLeft - adminPadRight
+  const adminPlotHeight = adminChartHeight - adminPadTop - adminPadBottom
+  const adminStepX = adminPlotWidth / (adminDocs.length || 1)
+  const adminBarWidth = Math.min(22, adminStepX * 0.28)
 
-  // 3. Data Grafik Absensi
-  const attendanceWeekly = stats.attendance.weekly
-  const attChartWidth = 480
-  const attChartHeight = 160
-  const attPadLeft = 28
-  const attPadRight = 14
-  const attPadTop = 18
-  const attPadBottom = 30
-  const attPlotWidth = attChartWidth - attPadLeft - attPadRight
-  const attPlotHeight = attChartHeight - attPadTop - attPadBottom
-  const attStepX = attPlotWidth / (attendanceWeekly.length || 1)
-  const attBarWidth = Math.min(14, attStepX * 0.22)
-
-  const getAttY = (val: number) => {
-    return attPadTop + attPlotHeight - (val / 100) * attPlotHeight
+  const getAdminY = (val: number) => {
+    return adminPadTop + adminPlotHeight - (val / 100) * adminPlotHeight
   }
-  const attYTicks = [0, 50, 100]
+  const adminYTicks = [0, 50, 100]
 
   // 4. Data Raport Kemajuan Siswa
   const reportAspects = stats.studentReport.aspects
@@ -79,19 +72,6 @@ export function DashboardCharts({ stats }: DashboardChartsProps) {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#f1f5f9]">
               <div>
                 <h2 className="text-sm font-bold text-[#0f172a] flex items-center gap-2">
-                  <svg
-                    className="w-4 h-4 text-[#FBC02D]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
                   Distribusi Kelompok Usia (KU)
                 </h2>
                 <p className="text-xs text-[#64748b] mt-0.5">
@@ -106,7 +86,7 @@ export function DashboardCharts({ stats }: DashboardChartsProps) {
                   <span className="text-[#0f172a]">Aktif</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-xs bg-[#C62828]" />
+                  <span className="w-2.5 h-2.5 rounded-xs bg-[#972828]" />
                   <span className="text-[#0f172a]">Non-Aktif</span>
                 </div>
               </div>
@@ -189,7 +169,7 @@ export function DashboardCharts({ stats }: DashboardChartsProps) {
                         className="transition-all duration-200"
                       />
 
-                      {/* Bar Non-Aktif (#C62828) */}
+                      {/* Bar Non-Aktif (#972828) */}
                       <rect
                         x={colCenter + 1}
                         y={
@@ -199,7 +179,7 @@ export function DashboardCharts({ stats }: DashboardChartsProps) {
                         }
                         width={kuBarWidth}
                         height={ku.inactive > 0 ? inactiveH : 2}
-                        fill="#C62828"
+                        fill="#972828"
                         rx={2}
                         className="transition-all duration-200"
                       />
@@ -214,14 +194,6 @@ export function DashboardCharts({ stats }: DashboardChartsProps) {
                       >
                         {ku.key}
                       </text>
-                      <text
-                        x={colCenter}
-                        y={kuChartHeight - 2}
-                        textAnchor="middle"
-                        fontSize="8"
-                        fill={ku.total > 0 ? '#0f172a' : '#94a3b8'}
-                        fontWeight={ku.total > 0 ? '600' : 'normal'}
-                      ></text>
                     </g>
                   )
                 })}
@@ -234,7 +206,7 @@ export function DashboardCharts({ stats }: DashboardChartsProps) {
                   aria-live="polite"
                 >
                   <div className="font-semibold text-[#0f172a]">
-                    {ageGroups[hoveredKuIndex].key}
+                    {ageGroups[hoveredKuIndex].label}
                   </div>
                   <div className="text-[#78350F] font-medium">
                     Aktif: <strong>{ageGroups[hoveredKuIndex].active}</strong>
@@ -255,28 +227,12 @@ export function DashboardCharts({ stats }: DashboardChartsProps) {
             <div className="flex items-center justify-between pb-3 border-b border-[#f1f5f9]">
               <div>
                 <h2 className="text-sm font-bold text-[#0f172a] flex items-center gap-2">
-                  <svg
-                    className="w-4 h-4 text-[#C62828]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                  Distribusi Komposisi Siswa
+                  Distribusi Komposisi Squad
                 </h2>
                 <p className="text-xs text-[#64748b] mt-0.5">
                   Distribusi peran dan formasi siswa di lapangan
                 </p>
               </div>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FEF9C3] text-[#78350F] border border-[#FDE047]">
-                Formasi Skuad
-              </span>
             </div>
 
             <div className="mt-4 flex flex-col sm:flex-row items-center gap-5">
@@ -370,72 +326,55 @@ export function DashboardCharts({ stats }: DashboardChartsProps) {
 
       {/* Baris 2: Grafik Absensi & Raport Kemajuan Siswa */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Card 3: Grafik Absensi Latihan */}
+        {/* Card 3: Grafik Administrasi Siswa */}
         <div className="bg-white rounded-xl border border-[#e2e8f0] p-5 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#f1f5f9]">
               <div>
                 <h2 className="text-sm font-bold text-[#0f172a] flex items-center gap-2">
-                  <svg
-                    className="w-4 h-4 text-[#FBC02D]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  Grafik Absensi Latihan
+                  Grafik Administrasi Siswa
                 </h2>
                 <p className="text-xs text-[#64748b] mt-0.5">
-                  Tingkat kehadiran siswa pada sesi latihan mingguan
+                  Kelengkapan 4 berkas wajib pendaftaran
                 </p>
               </div>
 
-              {/* Legend Absensi */}
+              {/* Legend Administrasi */}
               <div className="flex items-center gap-3 text-xs font-medium shrink-0">
                 <div className="flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-xs bg-[#FBC02D]" />
-                  <span className="text-[#0f172a]">Hadir</span>
+                  <span className="text-[#0f172a]">Ada</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-xs bg-[#E5A800]" />
-                  <span className="text-[#0f172a]">Izin</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-xs bg-[#C62828]" />
-                  <span className="text-[#0f172a]">Alfa</span>
+                  <span className="w-2.5 h-2.5 rounded-xs bg-[#972828]" />
+                  <span className="text-[#0f172a]">Belum Ada</span>
                 </div>
               </div>
             </div>
 
-            {/* SVG Attendance Grouped Bar Chart */}
+            {/* SVG Administration Grouped Bar Chart */}
             <div className="relative mt-3">
               <svg
-                viewBox={`0 0 ${attChartWidth} ${attChartHeight}`}
+                viewBox={`0 0 ${adminChartWidth} ${adminChartHeight}`}
                 className="w-full h-auto overflow-visible select-none"
                 role="img"
-                aria-label="Grafik kehadiran latihan siswa mingguan"
+                aria-label="Grafik kelengkapan berkas administrasi siswa"
               >
-                {attYTicks.map((tick) => {
-                  const y = getAttY(tick)
+                {adminYTicks.map((tick) => {
+                  const y = getAdminY(tick)
                   return (
-                    <g key={`atty-${tick}`}>
+                    <g key={`adminy-${tick}`}>
                       <line
-                        x1={attPadLeft}
+                        x1={adminPadLeft}
                         y1={y}
-                        x2={attChartWidth - attPadRight}
+                        x2={adminChartWidth - adminPadRight}
                         y2={y}
                         stroke="#f1f5f9"
                         strokeDasharray="4 4"
                         strokeWidth={1}
                       />
                       <text
-                        x={attPadLeft - 6}
+                        x={adminPadLeft - 6}
                         y={y + 3}
                         textAnchor="end"
                         fontSize="9"
@@ -448,134 +387,139 @@ export function DashboardCharts({ stats }: DashboardChartsProps) {
                   )
                 })}
 
-                {attendanceWeekly.map((att, idx) => {
-                  const colCenter = attPadLeft + idx * attStepX + attStepX / 2
-                  const isHovered = hoveredWeekIndex === idx
+                {adminDocs.map((doc, idx) => {
+                  const colCenter =
+                    adminPadLeft + idx * adminStepX + adminStepX / 2
+                  const isHovered = hoveredDocIndex === idx
 
-                  const presentH = (att.present / 100) * attPlotHeight
-                  const excusedH = (att.excused / 100) * attPlotHeight
-                  const absentH = (att.absent / 100) * attPlotHeight
+                  const totalPlayers = stats.administrations.total
+                  const adaPct = doc.percentage
+                  const belumPct =
+                    totalPlayers > 0
+                      ? Math.round((doc.missing / totalPlayers) * 100)
+                      : 0
 
-                  const presentY = attPadTop + attPlotHeight - presentH
-                  const excusedY = attPadTop + attPlotHeight - excusedH
-                  const absentY = attPadTop + attPlotHeight - absentH
+                  const adaH =
+                    totalPlayers > 0 && doc.collected > 0
+                      ? (adaPct / 100) * adminPlotHeight
+                      : 2
+                  const belumH =
+                    totalPlayers > 0 && doc.missing > 0
+                      ? (belumPct / 100) * adminPlotHeight
+                      : 2
+
+                  const adaY = adminPadTop + adminPlotHeight - adaH
+                  const belumY = adminPadTop + adminPlotHeight - belumH
 
                   return (
                     <g
-                      key={att.period}
+                      key={doc.key}
                       className="cursor-pointer"
-                      onMouseEnter={() => setHoveredWeekIndex(idx)}
-                      onMouseLeave={() => setHoveredWeekIndex(null)}
+                      onMouseEnter={() => setHoveredDocIndex(idx)}
+                      onMouseLeave={() => setHoveredDocIndex(null)}
                     >
                       {isHovered && (
                         <rect
-                          x={attPadLeft + idx * attStepX + 4}
-                          y={attPadTop}
-                          width={attStepX - 8}
-                          height={attPlotHeight}
+                          x={adminPadLeft + idx * adminStepX + 4}
+                          y={adminPadTop}
+                          width={adminStepX - 8}
+                          height={adminPlotHeight}
                           fill="#FBC02D"
                           fillOpacity={0.08}
                           rx={4}
                         />
                       )}
 
-                      {/* Hadir Bar (#FBC02D) */}
+                      {/* Ada Bar (#FBC02D) */}
                       <rect
-                        x={colCenter - attBarWidth * 1.5 - 2}
-                        y={presentY}
-                        width={attBarWidth}
-                        height={presentH}
+                        x={colCenter - adminBarWidth - 2}
+                        y={adaY}
+                        width={adminBarWidth}
+                        height={adaH}
                         fill="#FBC02D"
-                        rx={2.5}
+                        rx={3}
                         className="transition-all duration-200"
                       />
 
-                      {/* Izin Bar (#E5A800) */}
+                      {/* Belum Ada Bar (#972828) */}
                       <rect
-                        x={colCenter - attBarWidth / 2}
-                        y={excusedY}
-                        width={attBarWidth}
-                        height={excusedH}
-                        fill="#E5A800"
-                        rx={2.5}
+                        x={colCenter + 2}
+                        y={belumY}
+                        width={adminBarWidth}
+                        height={belumH}
+                        fill="#972828"
+                        rx={3}
                         className="transition-all duration-200"
                       />
 
-                      {/* Alfa Bar (#C62828) */}
-                      <rect
-                        x={colCenter + attBarWidth / 2 + 2}
-                        y={absentY}
-                        width={attBarWidth}
-                        height={absentH}
-                        fill="#C62828"
-                        rx={2.5}
-                        className="transition-all duration-200"
-                      />
-
+                      {/* Label Dokumen */}
                       <text
                         x={colCenter}
-                        y={attChartHeight - 12}
+                        y={adminChartHeight - 12}
                         textAnchor="middle"
                         fontSize="10"
                         fontWeight={isHovered ? 'bold' : '600'}
                         fill={isHovered ? '#0f172a' : '#334155'}
                       >
-                        {att.period}
+                        {doc.label}
                       </text>
                       <text
                         x={colCenter}
-                        y={attChartHeight - 1}
+                        y={adminChartHeight - 1}
                         textAnchor="middle"
                         fontSize="8.5"
-                        fill="#16a34a"
+                        fill="#78350F"
                         fontWeight="600"
                       >
-                        {att.present}% hadir
+                        {doc.collected}/{totalPlayers} Ada
                       </text>
                     </g>
                   )
                 })}
               </svg>
 
-              {/* Tooltip Absensi */}
-              {hoveredWeekIndex !== null &&
-                attendanceWeekly[hoveredWeekIndex] && (
-                  <div
-                    className="absolute top-0 right-0 bg-white/95 backdrop-blur-xs border border-[#e2e8f0] rounded-lg shadow-sm px-2.5 py-1.5 text-xs pointer-events-none flex items-center gap-2.5 z-10"
-                    aria-live="polite"
-                  >
-                    <div className="font-semibold text-[#0f172a]">
-                      {attendanceWeekly[hoveredWeekIndex].period}
-                    </div>
-                    <div className="text-[#78350F]">
-                      Hadir:{' '}
-                      <strong>
-                        {attendanceWeekly[hoveredWeekIndex].present}%
-                      </strong>
-                    </div>
-                    <div className="text-[#B45309]">
-                      Izin:{' '}
-                      <strong>
-                        {attendanceWeekly[hoveredWeekIndex].excused}%
-                      </strong>
-                    </div>
-                    <div className="text-[#991B1B]">
-                      Alfa:{' '}
-                      <strong>
-                        {attendanceWeekly[hoveredWeekIndex].absent}%
-                      </strong>
-                    </div>
+              {/* Tooltip Administrasi */}
+              {hoveredDocIndex !== null && adminDocs[hoveredDocIndex] && (
+                <div
+                  className="absolute top-0 right-0 bg-white/95 backdrop-blur-xs border border-[#e2e8f0] rounded-lg shadow-sm px-2.5 py-1.5 text-xs pointer-events-none flex items-center gap-2.5 z-10"
+                  aria-live="polite"
+                >
+                  <div className="font-semibold text-[#0f172a]">
+                    {adminDocs[hoveredDocIndex].label}
                   </div>
-                )}
+                  <div className="text-[#78350F]">
+                    Ada:{' '}
+                    <strong>
+                      {adminDocs[hoveredDocIndex].collected} (
+                      {adminDocs[hoveredDocIndex].percentage}%)
+                    </strong>
+                  </div>
+                  <div className="text-[#991B1B]">
+                    Belum Ada:{' '}
+                    <strong>
+                      {adminDocs[hoveredDocIndex].missing} (
+                      {stats.administrations.total > 0
+                        ? Math.round(
+                            (adminDocs[hoveredDocIndex].missing /
+                              stats.administrations.total) *
+                              100,
+                          )
+                        : 0}
+                      %)
+                    </strong>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="mt-3 pt-2.5 border-t border-[#f1f5f9] flex items-center justify-between text-xs">
             <span className="text-[#64748b]">
-              Rata-rata Kehadiran Bulan Ini
-            </span>
-            <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-              {stats.attendance.averageRate}% (Disiplin Tinggi)
+              Siswa Berkas Lengkap:{' '}
+              <strong className="text-[#0f172a]">
+                {stats.administrations.complete}
+              </strong>{' '}
+              dari {stats.administrations.total} Siswa
             </span>
           </div>
         </div>
@@ -586,20 +530,7 @@ export function DashboardCharts({ stats }: DashboardChartsProps) {
             <div className="flex items-center justify-between pb-3 border-b border-[#f1f5f9]">
               <div>
                 <h2 className="text-sm font-bold text-[#0f172a] flex items-center gap-2">
-                  <svg
-                    className="w-4 h-4 text-[#C62828]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  Raport Kemajuan Siswa
+                  Raport Kemajuan Siswa (MASIH DEMO)
                 </h2>
                 <p className="text-xs text-[#64748b] mt-0.5">
                   Rata-rata evaluasi 4 pilar kemampuan kurikulum SSB
@@ -616,7 +547,7 @@ export function DashboardCharts({ stats }: DashboardChartsProps) {
             {/* Aspects Progress Bars */}
             <div className="mt-3.5 space-y-2.5">
               {reportAspects.map((asp, idx) => {
-                const barColor = idx % 2 === 0 ? 'bg-[#FBC02D]' : 'bg-[#C62828]'
+                const barColor = idx % 2 === 0 ? 'bg-[#FBC02D]' : 'bg-[#972828]'
                 const badgeColor =
                   idx % 2 === 0
                     ? 'text-[#78350F] bg-[#FEF9C3]'
